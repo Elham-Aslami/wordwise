@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WordWise">
+<meta name="theme-color" content="#1D9E75">
+<meta name="description" content="Daily vocabulary builder — learn 3 new words every day">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>WordWise — Daily Vocabulary Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f4f0;
+    --bg3: #eeecea;
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #9a9994;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #085041;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --coral: #D85A30;
+    --coral-light: #FAECE7;
+    --red-light: #FCEBEB;
+    --red-dark: #501313;
+    --radius: 12px;
+    --radius-lg: 16px;
+  }
+
+  body.dark {
+    --bg: #1a1a18;
+    --bg2: #242422;
+    --bg3: #2e2e2b;
+    --text: #f0eeea;
+    --text2: #a8a49e;
+    --text3: #6b6863;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --green-light: #04342C;
+    --green-dark: #9FE1CB;
+    --amber-light: #412402;
+    --purple-light: #26215C;
+    --coral-light: #4A1B0C;
+    --red-light: #501313;
+    --red-dark: #F7C1C1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Mobile / PWA ── */
+  @media (max-width: 600px) {
+    .app-wrap { max-width: 100%; }
+    .header { padding: 0.9rem 1rem; padding-top: calc(0.9rem + env(safe-area-inset-top)); }
+    .nav { padding: 0 0.5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .nav-btn { padding: 9px 11px; font-size: 12px; white-space: nowrap; }
+    .screen { padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+    .word-title { font-size: 24px; }
+    .word-card { padding: 1.1rem; }
+    .stats-grid { grid-template-columns: repeat(3,1fr); gap: 7px; }
+    .stat-n { font-size: 22px; }
+    .quiz-word { font-size: 28px; }
+    .logo { font-size: 19px; }
+    .streak { font-size: 12px; padding: 4px 9px; }
+    .xp-badge { font-size: 12px; }
+    .chat-msgs { max-height: 160px; }
+    .modal { width: 95%; padding: 1.1rem; }
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+
+  .app-wrap { max-width: 740px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .logo span { color: var(--green); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .streak { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; color: var(--amber); background: var(--amber-light); padding: 4px 11px; border-radius: 20px; }
+  .xp-badge { font-size: 13px; color: var(--text2); }
+  .dark-toggle { background: none; border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 14px; color: var(--text2); }
+
+  .nav { display: flex; padding: 0 1.5rem; border-bottom: 0.5px solid var(--border); background: var(--bg); }
+  .nav-btn { padding: 10px 15px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 400; color: var(--text2); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+  .nav-btn.active { color: var(--green); font-weight: 500; border-bottom-color: var(--green); }
+  .nav-btn:hover { color: var(--text); }
+
+  .screen { display: none; padding: 1.5rem; }
+  .screen.active { display: block; }
+
+  /* TODAY */
+  .date-label { font-size: 11px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem; }
+  .word-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1rem; position: relative; overflow: hidden; }
+  .word-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--green); }
+  .word-card:nth-child(2)::before { background: var(--purple); }
+  .word-card:nth-child(3)::before { background: var(--coral); }
+  .word-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.6rem; }
+  .word-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 500; }
+  .word-pos { font-size: 11px; font-weight: 500; color: var(--green); background: var(--green-light); padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
+  .word-pron { font-size: 13px; color: var(--text2); margin-bottom: 0.5rem; font-style: italic; }
+  .word-def { font-size: 15px; line-height: 1.65; color: var(--text); margin-bottom: 0.9rem; }
+  .word-example { font-size: 14px; line-height: 1.65; color: var(--text2); border-left: 2px solid var(--border2); padding-left: 12px; margin-bottom: 0.9rem; font-style: italic; }
+  .syn-row { font-size: 13px; color: var(--text2); margin-bottom: 0.75rem; }
+  .syn-tag { display: inline-block; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 20px; padding: 2px 10px; font-size: 12px; margin: 2px 2px 2px 0; color: var(--text2); }
+  .learned-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border); background: var(--bg2); color: var(--text2); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .learned-btn.done { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+  .practice-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border); background: none; color: var(--text2); transition: all 0.15s; font-family: 'DM Sans', sans-serif; margin-left: 8px; }
+  .practice-btn:hover { background: var(--bg2); }
+  .word-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .speak-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border); background: none; color: var(--text2); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .speak-btn:hover { background: var(--bg2); }
+  .speak-btn.speaking { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+
+  /* QUIZ */
+  .quiz-prog-bar { height: 4px; background: var(--bg2); border-radius: 2px; margin-bottom: 0.75rem; overflow: hidden; }
+  .quiz-prog-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.4s; }
+  .quiz-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 1.5rem; }
+  .quiz-type-label { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.6rem; }
+  .quiz-word { font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 500; margin-bottom: 0.4rem; }
+  .quiz-hint { font-size: 13px; color: var(--text2); margin-bottom: 1.4rem; }
+  .quiz-options { display: flex; flex-direction: column; gap: 9px; margin-bottom: 1.2rem; }
+  .opt-btn { padding: 13px 16px; text-align: left; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; transition: all 0.15s; color: var(--text); }
+  .opt-btn:hover:not(:disabled) { border-color: var(--border2); background: var(--bg2); }
+  .opt-btn.correct { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+  .opt-btn.wrong { background: var(--red-light); border-color: #F09595; color: var(--red-dark); }
+  .quiz-fill-input { width: 100%; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius); color: var(--text); outline: none; margin-bottom: 10px; }
+  .quiz-fill-input:focus { border-color: var(--green); }
+  .quiz-feedback { padding: 12px 16px; border-radius: var(--radius); font-size: 14px; line-height: 1.6; margin-bottom: 1rem; }
+  .quiz-feedback.correct { background: var(--green-light); color: var(--green-dark); }
+  .quiz-feedback.wrong { background: var(--red-light); color: var(--red-dark); }
+  .next-btn { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .next-btn:hover { background: #0F6E56; }
+  .quiz-complete { text-align: center; padding: 2rem 1rem; }
+  .score-ring { width: 100px; height: 100px; border-radius: 50%; background: var(--green-light); border: 3px solid var(--green); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+  .score-n { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 600; color: var(--green); line-height: 1; }
+  .score-d { font-size: 12px; color: var(--green); }
+  .quiz-complete h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 0.4rem; }
+  .quiz-complete p { font-size: 14px; color: var(--text2); margin-bottom: 1.25rem; }
+  .xp-pill { display: inline-block; background: var(--amber-light); color: var(--amber); font-size: 13px; font-weight: 500; padding: 5px 16px; border-radius: 20px; margin-bottom: 1.25rem; }
+  .q-type-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .q-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 0.5px solid var(--border); background: none; cursor: pointer; color: var(--text2); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .q-tab.active { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+
+  /* BANK */
+  .search-wrap { display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; margin-bottom: 1rem; }
+  .search-wrap input { flex: 1; padding: 10px 0; font-family: 'DM Sans', sans-serif; font-size: 14px; background: none; border: none; outline: none; color: var(--text); }
+  .filter-row { display: flex; gap: 6px; margin-bottom: 1.1rem; flex-wrap: wrap; }
+  .fchip { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 0.5px solid var(--border); background: none; cursor: pointer; color: var(--text2); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .fchip.active { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+  .bank-list { display: flex; flex-direction: column; gap: 7px; }
+  .b-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--bg); border: 0.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+  .b-item:hover { border-color: var(--border2); background: var(--bg2); }
+  .b-word { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 500; }
+  .b-pos { font-size: 11px; color: var(--green); background: var(--green-light); padding: 2px 8px; border-radius: 20px; margin-left: 7px; }
+  .b-def { font-size: 13px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+  .m-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .m0 { background: var(--border); }
+  .m1 { background: #FAC775; }
+  .m2 { background: var(--green); }
+  .bank-count { font-size: 12px; color: var(--text3); margin-bottom: 0.75rem; }
+
+  /* PROGRESS */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--bg2); border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-n { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 500; line-height: 1; }
+  .stat-l { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .sec-title { font-size: 12px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem; }
+  .mbar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .mbar-label { font-size: 13px; width: 75px; color: var(--text2); }
+  .mbar-track { flex: 1; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .mbar-fill { height: 100%; border-radius: 3px; transition: width 0.6s; }
+  .mbar-count { font-size: 13px; font-weight: 500; min-width: 28px; text-align: right; color: var(--text2); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 1.5rem; }
+  .cal-d { aspect-ratio: 1; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; color: var(--text3); background: var(--bg2); }
+  .cal-d.done { background: var(--green-light); color: var(--green-dark); font-weight: 500; }
+  .cal-d.today-d { background: var(--green); color: white; font-weight: 500; }
+
+  /* CHAT */
+  .chat-section { margin-top: 1.5rem; border-top: 0.5px solid var(--border); padding-top: 1.25rem; }
+  .chat-head { display: flex; align-items: center; gap: 7px; margin-bottom: 0.9rem; }
+  .chat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .chat-msgs { background: var(--bg2); border-radius: var(--radius); padding: 1rem; margin-bottom: 8px; min-height: 80px; max-height: 220px; overflow-y: auto; font-size: 14px; line-height: 1.6; }
+  .msg-wrap { margin-bottom: 10px; }
+  .msg-lbl { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+  .msg-ai { color: var(--text); }
+  .msg-you { color: var(--text2); text-align: right; }
+  .msg-typing { color: var(--text3); font-style: italic; font-size: 13px; }
+  .chat-row { display: flex; gap: 7px; }
+  .chat-inp { flex: 1; padding: 9px 13px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: var(--bg); border: 0.5px solid var(--border2); border-radius: 10px; outline: none; color: var(--text); }
+  .chat-inp:focus { border-color: var(--green); }
+  .chat-send { padding: 9px 16px; background: var(--green); color: white; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .chat-send:hover { background: #0F6E56; }
+  .chat-send:disabled { background: var(--border); cursor: not-allowed; }
+
+  /* PRACTICE modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; width: 90%; max-width: 480px; border: 0.5px solid var(--border2); }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 0.5rem; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 1rem; }
+  .modal textarea { width: 100%; padding: 10px 13px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); color: var(--text); outline: none; resize: vertical; min-height: 90px; line-height: 1.6; }
+  .modal textarea:focus { border-color: var(--green); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .modal-cancel { padding: 9px 18px; background: none; border: 0.5px solid var(--border); border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; color: var(--text2); }
+  .modal-submit { padding: 9px 18px; background: var(--green); color: white; border: none; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .modal-result { margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: var(--radius); font-size: 14px; line-height: 1.6; color: var(--text); border-left: 3px solid var(--green); display: none; }
+
+  .api-note { background: var(--amber-light); color: var(--amber); font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 1rem; }
+  .api-setup { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
+  .api-setup p { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .api-setup input { width: 100%; padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--bg); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--text); outline: none; margin-bottom: 8px; }
+  .api-setup button { padding: 7px 16px; background: var(--green); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app-wrap">
+  <div class="header">
+    <div class="logo">word<span>wise</span></div>
+    <div class="header-right">
+      <div class="streak">🔥 <span id="streak-count">0</span> day streak</div>
+      <div class="xp-badge" id="xp-disp">0 XP</div>
+      <button class="dark-toggle" onclick="toggleDark()" id="dark-btn">🌙</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showScreen('today',this)">Today</button>
+    <button class="nav-btn" onclick="showScreen('quiz',this)">Quiz</button>
+    <button class="nav-btn" onclick="showScreen('bank',this)">Word Bank</button>
+    <button class="nav-btn" onclick="showScreen('progress',this)">Progress</button>
+  </div>
+
+  <div id="s-today" class="screen active">
+    <div class="date-label" id="today-date"></div>
+    <div id="word-cards"></div>
+  </div>
+
+  <div id="s-quiz" class="screen">
+    <div class="q-type-tabs">
+      <button class="q-tab active" onclick="setQType('mc',this)">Multiple choice</button>
+      <button class="q-tab" onclick="setQType('fill',this)">Fill in blank</button>
+      <button class="q-tab" onclick="setQType('match',this)">Reverse match</button>
+    </div>
+    <div id="quiz-wrap"></div>
+  </div>
+
+  <div id="s-bank" class="screen">
+    <div class="search-wrap">
+      <span style="font-size:14px;color:var(--text3)">⌕</span>
+      <input type="text" id="b-search" placeholder="Search words..." oninput="renderBank()">
+    </div>
+    <div class="filter-row">
+      <button class="fchip active" onclick="setF('all',this)">All</button>
+      <button class="fchip" onclick="setF('noun',this)">Noun</button>
+      <button class="fchip" onclick="setF('verb',this)">Verb</button>
+      <button class="fchip" onclick="setF('adjective',this)">Adjective</button>
+      <button class="fchip" onclick="setF('adverb',this)">Adverb</button>
+      <button class="fchip" onclick="setF('learned',this)">Learned ✓</button>
+    </div>
+    <div class="bank-count" id="b-count"></div>
+    <div class="bank-list" id="bank-list"></div>
+  </div>
+
+  <div id="s-progress" class="screen">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-n" id="p-seen">0</div><div class="stat-l">Words seen</div></div>
+      <div class="stat-card"><div class="stat-n" id="p-mastered">0</div><div class="stat-l">Mastered</div></div>
+      <div class="stat-card"><div class="stat-n" id="p-acc">–</div><div class="stat-l">Quiz accuracy</div></div>
+    </div>
+    <div class="sec-title">Mastery breakdown</div>
+    <div class="mbar-row"><div class="mbar-label">Mastered</div><div class="mbar-track"><div class="mbar-fill" id="mb-m" style="background:var(--green)"></div></div><span class="mbar-count" id="mc-m">0</span></div>
+    <div class="mbar-row"><div class="mbar-label">Learning</div><div class="mbar-track"><div class="mbar-fill" id="mb-l" style="background:#EF9F27"></div></div><span class="mbar-count" id="mc-l">0</span></div>
+    <div class="mbar-row" style="margin-bottom:1.5rem"><div class="mbar-label">New</div><div class="mbar-track"><div class="mbar-fill" id="mb-n" style="background:#AFA9EC"></div></div><span class="mbar-count" id="mc-n">0</span></div>
+    <div class="sec-title">Activity — <span id="cal-month"></span></div>
+    <div class="cal-grid" id="cal-grid" style="margin-bottom:1.5rem"></div>
+    <div class="chat-section">
+      <div class="chat-head"><div class="chat-dot"></div><span style="font-size:14px;font-weight:500">AI Word Coach</span></div>
+      <div id="api-area"></div>
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="msg-wrap msg-ai"><div class="msg-lbl">wordwise</div>Ask me anything — "Use 'eloquent' in 3 sentences", "What's the difference between 'reluctant' and 'hesitant'?", or "Give me a memory trick for 'meticulous'."</div>
+      </div>
+      <div class="chat-row">
+        <input class="chat-inp" id="chat-inp" type="text" placeholder="Ask about any word..." onkeydown="if(event.key==='Enter')doChat()">
+        <button class="chat-send" id="chat-send" onclick="doChat()">Ask</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Practice modal -->
+<div class="modal-overlay" id="practice-modal">
+  <div class="modal">
+    <h3 id="prac-title">Practice: word</h3>
+    <div class="modal-sub" id="prac-sub"></div>
+    <textarea id="prac-text" placeholder="Write your sentence here..."></textarea>
+    <div class="modal-result" id="prac-result"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closePrac()">Cancel</button>
+      <button class="modal-submit" onclick="submitPrac()">Get feedback</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── WORD BANK (1000 words) ────────────────────────────────────────────────
+const WORDS = [
+  {word:"eloquent",pos:"adjective",pron:"/ˈel.ə.kwənt/",def:"Fluent and persuasive in speaking or writing.",ex:"She gave an eloquent speech that moved the entire audience.",syn:["articulate","expressive","persuasive","fluent"]},
+  {word:"resilient",pos:"adjective",pron:"/rɪˈzɪl.i.ənt/",def:"Able to recover quickly from difficulties.",ex:"After losing his job, he remained resilient and found new opportunities.",syn:["tough","adaptable","flexible","sturdy"]},
+  {word:"meticulous",pos:"adjective",pron:"/məˈtɪk.jʊ.ləs/",def:"Showing great attention to detail; very careful and precise.",ex:"The meticulous accountant double-checked every number.",syn:["careful","precise","thorough","scrupulous"]},
+  {word:"contemplate",pos:"verb",pron:"/ˈkɒn.tem.pleɪt/",def:"To think deeply and carefully about something.",ex:"She sat by the window to contemplate her next career move.",syn:["ponder","reflect","consider","muse"]},
+  {word:"ambiguous",pos:"adjective",pron:"/æmˈbɪɡ.ju.əs/",def:"Open to more than one interpretation; unclear.",ex:"His ambiguous response left everyone confused about his intentions.",syn:["unclear","vague","uncertain","equivocal"]},
+  {word:"persevere",pos:"verb",pron:"/ˌpɜːr.sɪˈvɪər/",def:"To continue doing something despite difficulty or opposition.",ex:"Despite many setbacks, she persevered and completed her degree.",syn:["persist","endure","continue","push on"]},
+  {word:"pragmatic",pos:"adjective",pron:"/præɡˈmæt.ɪk/",def:"Dealing with things practically rather than theoretically.",ex:"A pragmatic approach helped them solve the problem quickly.",syn:["practical","realistic","sensible","down-to-earth"]},
+  {word:"articulate",pos:"verb",pron:"/ɑːrˈtɪk.jʊ.leɪt/",def:"To express an idea or feeling clearly in words.",ex:"He struggled to articulate exactly how he was feeling.",syn:["express","convey","communicate","voice"]},
+  {word:"reluctant",pos:"adjective",pron:"/rɪˈlʌk.tənt/",def:"Unwilling or hesitant to do something.",ex:"She was reluctant to ask for help, preferring to work alone.",syn:["hesitant","unwilling","disinclined","loath"]},
+  {word:"inevitable",pos:"adjective",pron:"/ɪnˈev.ɪ.tə.bəl/",def:"Certain to happen and impossible to avoid.",ex:"Change is inevitable — the best we can do is prepare for it.",syn:["unavoidable","certain","inescapable","destined"]},
+  {word:"candid",pos:"adjective",pron:"/ˈkæn.dɪd/",def:"Honest and direct, sometimes uncomfortably so.",ex:"I appreciate your candid feedback on my presentation.",syn:["frank","honest","blunt","forthright"]},
+  {word:"tenacious",pos:"adjective",pron:"/tɪˈneɪ.ʃəs/",def:"Holding firmly to something; not giving up easily.",ex:"Her tenacious attitude helped her overcome every obstacle.",syn:["persistent","determined","stubborn","unyielding"]},
+  {word:"subtle",pos:"adjective",pron:"/ˈsʌt.əl/",def:"Not obvious or easy to notice; requiring careful attention.",ex:"There was a subtle difference in tone between the two emails.",syn:["understated","delicate","nuanced","faint"]},
+  {word:"diligent",pos:"adjective",pron:"/ˈdɪl.ɪ.dʒənt/",def:"Having or showing care and effort in your work or duties.",ex:"A diligent student reviews notes every day, not just before exams.",syn:["hardworking","assiduous","dedicated","conscientious"]},
+  {word:"empathy",pos:"noun",pron:"/ˈem.pə.θi/",def:"The ability to understand and share the feelings of another.",ex:"Good leaders show empathy toward the struggles of their team.",syn:["compassion","understanding","sympathy","sensitivity"]},
+  {word:"profound",pos:"adjective",pron:"/prəˈfaʊnd/",def:"Very great or intense; having deep meaning.",ex:"Reading that book had a profound impact on my thinking.",syn:["deep","significant","meaningful","far-reaching"]},
+  {word:"scrutinize",pos:"verb",pron:"/ˈskruː.tɪ.naɪz/",def:"To examine or inspect closely and thoroughly.",ex:"The editor scrutinized every sentence before publication.",syn:["examine","inspect","analyze","study"]},
+  {word:"alleviate",pos:"verb",pron:"/əˈliː.vi.eɪt/",def:"To make something painful or difficult less severe.",ex:"A short walk outside can alleviate stress after a long work day.",syn:["ease","reduce","relieve","lessen"]},
+  {word:"coherent",pos:"adjective",pron:"/kəʊˈhɪər.ənt/",def:"Logical and well-organized; easy to understand.",ex:"A coherent argument is built on clear evidence and structure.",syn:["logical","consistent","clear","organized"]},
+  {word:"initiative",pos:"noun",pron:"/ɪˈnɪʃ.ə.tɪv/",def:"The ability to act or take charge before others do.",ex:"She showed real initiative by proposing a solution without being asked.",syn:["drive","enterprise","ambition","resourcefulness"]},
+  {word:"nuance",pos:"noun",pron:"/ˈnjuː.ɑːns/",def:"A subtle difference in meaning, expression, or sound.",ex:"Understanding the nuances of a language takes years of practice.",syn:["subtlety","distinction","shade","refinement"]},
+  {word:"endure",pos:"verb",pron:"/ɪnˈdjʊər/",def:"To suffer something difficult or painful without giving up.",ex:"Athletes train their bodies to endure extreme physical stress.",syn:["withstand","tolerate","bear","sustain"]},
+  {word:"perspective",pos:"noun",pron:"/pəˈspek.tɪv/",def:"A particular way of thinking about something; a point of view.",ex:"Traveling gave her a new perspective on her own culture.",syn:["viewpoint","outlook","standpoint","angle"]},
+  {word:"skeptical",pos:"adjective",pron:"/ˈskep.tɪ.kəl/",def:"Not easily convinced; having doubts or reservations.",ex:"He was skeptical of the new policy until he saw the results.",syn:["doubtful","cynical","questioning","unconvinced"]},
+  {word:"immerse",pos:"verb",pron:"/ɪˈmɜːrs/",def:"To involve yourself deeply in something.",ex:"The best way to learn a language is to immerse yourself in it.",syn:["absorb","engross","engage","plunge"]},
+  {word:"concise",pos:"adjective",pron:"/kənˈsaɪs/",def:"Giving information clearly using few words.",ex:"A concise email is more likely to be read and acted upon.",syn:["brief","succinct","terse","pithy"]},
+  {word:"cultivate",pos:"verb",pron:"/ˈkʌl.tɪ.veɪt/",def:"To develop or improve something through effort over time.",ex:"She worked hard to cultivate strong relationships with her colleagues.",syn:["develop","nurture","foster","build"]},
+  {word:"demonstrate",pos:"verb",pron:"/ˈdem.ən.streɪt/",def:"To show or prove something clearly.",ex:"He demonstrated patience by answering every question calmly.",syn:["show","prove","illustrate","exhibit"]},
+  {word:"elaborate",pos:"verb",pron:"/ɪˈlæb.ə.reɪt/",def:"To explain something in more detail.",ex:"Could you elaborate on what you meant by that comment?",syn:["expand","detail","explain","clarify"]},
+  {word:"facilitate",pos:"verb",pron:"/fəˈsɪl.ɪ.teɪt/",def:"To make something easier or help it happen more smoothly.",ex:"The new software facilitates communication between remote teams.",syn:["enable","assist","ease","help"]},
+  {word:"genuine",pos:"adjective",pron:"/ˈdʒen.ju.ɪn/",def:"Truly what it appears to be; sincere and authentic.",ex:"Her genuine smile made everyone feel welcome.",syn:["authentic","sincere","real","honest"]},
+  {word:"hesitate",pos:"verb",pron:"/ˈhez.ɪ.teɪt/",def:"To pause before doing or saying something.",ex:"Don't hesitate to ask if you need any help.",syn:["pause","waver","delay","falter"]},
+  {word:"illustrate",pos:"verb",pron:"/ˈɪl.ə.streɪt/",def:"To explain or show something using examples.",ex:"He used a diagram to illustrate how the process works.",syn:["show","demonstrate","depict","explain"]},
+  {word:"justify",pos:"verb",pron:"/ˈdʒʌs.tɪ.faɪ/",def:"To give a good reason for something; to show it is right.",ex:"Can you justify why the project went over budget?",syn:["explain","defend","rationalize","support"]},
+  {word:"keen",pos:"adjective",pron:"/kiːn/",def:"Enthusiastic and eager; having sharp awareness.",ex:"She was keen to learn as much as possible in her first year.",syn:["eager","enthusiastic","sharp","enthusiastic"]},
+  {word:"leverage",pos:"verb",pron:"/ˈlev.ər.ɪdʒ/",def:"To use something to maximum advantage.",ex:"She learned to leverage her network to find new opportunities.",syn:["use","exploit","utilize","apply"]},
+  {word:"motivate",pos:"verb",pron:"/ˈməʊ.tɪ.veɪt/",def:"To provide a reason for someone to act or work harder.",ex:"A good manager knows how to motivate their entire team.",syn:["inspire","encourage","drive","spur"]},
+  {word:"notify",pos:"verb",pron:"/ˈnəʊ.tɪ.faɪ/",def:"To officially tell someone about something.",ex:"Please notify the team if you will be late to the meeting.",syn:["inform","alert","tell","advise"]},
+  {word:"observe",pos:"verb",pron:"/əbˈzɜːv/",def:"To watch something carefully; to notice.",ex:"Scientists observe the behavior of animals in their natural habitat.",syn:["watch","notice","perceive","study"]},
+  {word:"perceive",pos:"verb",pron:"/pəˈsiːv/",def:"To become aware of something through the senses or mind.",ex:"How we perceive a situation greatly affects our reaction to it.",syn:["sense","notice","observe","detect"]},
+  {word:"qualify",pos:"verb",pron:"/ˈkwɒl.ɪ.faɪ/",def:"To meet the necessary requirements; to add a condition.",ex:"You need three years of experience to qualify for this role.",syn:["meet","satisfy","fulfill","limit"]},
+  {word:"retain",pos:"verb",pron:"/rɪˈteɪn/",def:"To keep or continue to have something.",ex:"It can be hard to retain information you don't use regularly.",syn:["keep","hold","maintain","preserve"]},
+  {word:"significant",pos:"adjective",pron:"/sɪɡˈnɪf.ɪ.kənt/",def:"Important or large enough to have an effect.",ex:"There was a significant improvement in her grades after extra study.",syn:["important","notable","meaningful","major"]},
+  {word:"transparent",pos:"adjective",pron:"/trænsˈpær.ənt/",def:"Easy to understand; not hiding anything; honest.",ex:"The company aims to be transparent about how it handles user data.",syn:["open","honest","clear","direct"]},
+  {word:"undermine",pos:"verb",pron:"/ˌʌn.dəˈmaɪn/",def:"To weaken or damage something gradually.",ex:"Constant interruptions can undermine a person's confidence.",syn:["weaken","damage","erode","sabotage"]},
+  {word:"versatile",pos:"adjective",pron:"/ˈvɜː.sə.taɪl/",def:"Able to adapt to many different functions or activities.",ex:"A versatile employee is an asset to any organization.",syn:["adaptable","flexible","multifaceted","capable"]},
+  {word:"withstand",pos:"verb",pron:"/wɪðˈstænd/",def:"To remain undamaged by; to resist.",ex:"This material is designed to withstand extreme temperatures.",syn:["resist","endure","tolerate","survive"]},
+  {word:"yearning",pos:"noun",pron:"/ˈjɜːn.ɪŋ/",def:"A feeling of intense longing for something.",ex:"She felt a deep yearning to return to her hometown.",syn:["longing","desire","craving","wish"]},
+  {word:"zealous",pos:"adjective",pron:"/ˈzel.əs/",def:"Having or showing great energy and enthusiasm.",ex:"The zealous volunteer worked twelve hours every weekend.",syn:["enthusiastic","passionate","fervent","eager"]},
+  {word:"adapt",pos:"verb",pron:"/əˈdæpt/",def:"To change to suit new conditions or requirements.",ex:"Successful businesses adapt quickly to changing markets.",syn:["adjust","change","modify","evolve"]},
+  {word:"benefit",pos:"noun",pron:"/ˈben.ɪ.fɪt/",def:"An advantage or positive outcome from something.",ex:"One benefit of regular exercise is improved mental health.",syn:["advantage","gain","reward","plus"]},
+  {word:"challenge",pos:"noun",pron:"/ˈtʃæl.ɪndʒ/",def:"A difficult task that requires effort and skill.",ex:"Learning a new language is a challenging but rewarding experience.",syn:["difficulty","obstacle","test","hurdle"]},
+  {word:"dedicate",pos:"verb",pron:"/ˈded.ɪ.keɪt/",def:"To commit time or effort to a particular task or purpose.",ex:"She dedicated two hours each morning to improving her English.",syn:["commit","devote","give","pledge"]},
+  {word:"enhance",pos:"verb",pron:"/ɪnˈhɑːns/",def:"To improve the quality or value of something.",ex:"Good lighting can greatly enhance the mood of a room.",syn:["improve","boost","increase","strengthen"]},
+  {word:"flourish",pos:"verb",pron:"/ˈflʌr.ɪʃ/",def:"To grow or develop in a healthy or successful way.",ex:"Children flourish when they feel safe and supported.",syn:["thrive","prosper","grow","bloom"]},
+  {word:"generate",pos:"verb",pron:"/ˈdʒen.ə.reɪt/",def:"To produce or cause something to exist.",ex:"The campaign generated a lot of interest on social media.",syn:["produce","create","cause","bring about"]},
+  {word:"highlight",pos:"verb",pron:"/ˈhaɪ.laɪt/",def:"To draw attention to something important.",ex:"The report highlights several key areas for improvement.",syn:["emphasize","stress","point out","spotlight"]},
+  {word:"implement",pos:"verb",pron:"/ˈɪm.plɪ.ment/",def:"To put a plan or decision into effect.",ex:"The new safety procedures will be implemented next month.",syn:["apply","execute","carry out","introduce"]},
+  {word:"jeopardize",pos:"verb",pron:"/ˈdʒep.ə.daɪz/",def:"To put something at risk of being harmed or lost.",ex:"Skipping sleep can jeopardize your health and productivity.",syn:["risk","endanger","threaten","compromise"]},
+  {word:"knowledgeable",pos:"adjective",pron:"/ˈnɒl.ɪ.dʒə.bəl/",def:"Having a lot of knowledge about a subject.",ex:"She is very knowledgeable about nutrition and healthy eating.",syn:["informed","educated","expert","learned"]},
+  {word:"logical",pos:"adjective",pron:"/ˈlɒdʒ.ɪ.kəl/",def:"Based on clear and valid reasoning.",ex:"His logical explanation made the complex topic easy to follow.",syn:["rational","reasonable","sensible","sound"]},
+  {word:"maintain",pos:"verb",pron:"/meɪnˈteɪn/",def:"To keep something in its current state or condition.",ex:"It can be hard to maintain focus when working from home.",syn:["keep","preserve","sustain","continue"]},
+  {word:"notable",pos:"adjective",pron:"/ˈnəʊ.tə.bəl/",def:"Worthy of attention; remarkable.",ex:"There was a notable improvement in her confidence after the course.",syn:["remarkable","significant","outstanding","striking"]},
+  {word:"optimize",pos:"verb",pron:"/ˈɒp.tɪ.maɪz/",def:"To make the best use of something; to improve its effectiveness.",ex:"They optimized the website to load faster on mobile devices.",syn:["improve","maximize","refine","enhance"]},
+  {word:"precise",pos:"adjective",pron:"/prɪˈsaɪs/",def:"Exact and accurate; with no room for error.",ex:"The scientist recorded precise measurements for every experiment.",syn:["exact","accurate","specific","correct"]},
+  {word:"relevant",pos:"adjective",pron:"/ˈrel.ɪ.vənt/",def:"Closely connected or appropriate to the matter at hand.",ex:"Make sure your cover letter includes relevant work experience.",syn:["applicable","related","pertinent","fitting"]},
+  {word:"stimulate",pos:"verb",pron:"/ˈstɪm.jʊ.leɪt/",def:"To cause something to grow or become more active.",ex:"Reading books in English can stimulate your vocabulary growth.",syn:["encourage","promote","spark","activate"]},
+  {word:"thorough",pos:"adjective",pron:"/ˈθʌr.ə/",def:"Complete in every detail; leaving nothing out.",ex:"She did a thorough review of all the applications before deciding.",syn:["complete","detailed","comprehensive","careful"]},
+  {word:"unique",pos:"adjective",pron:"/juːˈniːk/",def:"Being the only one of its kind; unlike anything else.",ex:"Everyone has a unique way of learning that works for them.",syn:["distinctive","one-of-a-kind","singular","special"]},
+  {word:"validate",pos:"verb",pron:"/ˈvæl.ɪ.deɪt/",def:"To confirm or prove that something is correct.",ex:"The test results validated the researchers' original hypothesis.",syn:["confirm","verify","prove","support"]},
+  {word:"wary",pos:"adjective",pron:"/ˈweər.i/",def:"Feeling cautious about possible dangers.",ex:"She was wary of sharing personal information online.",syn:["cautious","careful","guarded","watchful"]},
+  {word:"exemplify",pos:"verb",pron:"/ɪɡˈzem.plɪ.faɪ/",def:"To be a typical example of something.",ex:"Her dedication to learning exemplifies what we admire in students.",syn:["illustrate","show","represent","typify"]},
+  {word:"yield",pos:"verb",pron:"/jiːld/",def:"To produce or provide; to give way to pressure.",ex:"Hard work often yields unexpected rewards over time.",syn:["produce","give","provide","generate"]},
+  {word:"assess",pos:"verb",pron:"/əˈses/",def:"To evaluate or judge the nature of something.",ex:"Teachers assess students through both exams and projects.",syn:["evaluate","judge","measure","appraise"]},
+  {word:"bold",pos:"adjective",pron:"/bəʊld/",def:"Showing confidence and willingness to take risks.",ex:"It was a bold move to leave a stable job to start a business.",syn:["brave","daring","confident","courageous"]},
+  {word:"clarify",pos:"verb",pron:"/ˈklær.ɪ.faɪ/",def:"To make something clearer and easier to understand.",ex:"Could you clarify what you mean by 'flexible schedule'?",syn:["explain","clear up","illuminate","spell out"]},
+  {word:"distinct",pos:"adjective",pron:"/dɪˈstɪŋkt/",def:"Noticeably different; clear and separate.",ex:"There are three distinct phases to the hiring process.",syn:["clear","separate","different","unique"]},
+  {word:"emerge",pos:"verb",pron:"/ɪˈmɜːdʒ/",def:"To come out or become known.",ex:"A solution emerged after hours of discussion.",syn:["appear","arise","develop","surface"]},
+  {word:"foster",pos:"verb",pron:"/ˈfɒs.tər/",def:"To encourage the development of something.",ex:"Schools should foster a love of reading from an early age.",syn:["promote","encourage","nurture","support"]},
+  {word:"grasp",pos:"verb",pron:"/ɡrɑːsp/",def:"To understand something fully.",ex:"It took her a few days to fully grasp the concept.",syn:["understand","comprehend","get","follow"]},
+  {word:"humble",pos:"adjective",pron:"/ˈhʌm.bəl/",def:"Not proud or arrogant; modest about achievements.",ex:"Despite her success, she remained humble and approachable.",syn:["modest","unpretentious","down-to-earth","unassuming"]},
+  {word:"inspire",pos:"verb",pron:"/ɪnˈspaɪər/",def:"To fill someone with enthusiasm or the urge to act.",ex:"Her story inspired thousands of young women to pursue science.",syn:["motivate","encourage","energize","uplift"]},
+  {word:"justify",pos:"verb",pron:"/ˈdʒʌs.tɪ.faɪ/",def:"To give a good reason for something.",ex:"He had to justify his decision to the entire board.",syn:["explain","defend","support","rationalize"]},
+  {word:"linger",pos:"verb",pron:"/ˈlɪŋ.ɡər/",def:"To stay somewhere longer than necessary; to last.",ex:"The smell of fresh coffee lingered in the room all morning.",syn:["remain","stay","persist","hang around"]},
+  {word:"manifest",pos:"verb",pron:"/ˈmæn.ɪ.fest/",def:"To show or demonstrate something clearly.",ex:"Stress can manifest itself as headaches or tiredness.",syn:["show","reveal","display","express"]},
+  {word:"narrate",pos:"verb",pron:"/nəˈreɪt/",def:"To tell or give an account of a story or event.",ex:"She narrated the events of her journey in vivid detail.",syn:["tell","recount","describe","relate"]},
+  {word:"objective",pos:"adjective",pron:"/əbˈdʒek.tɪv/",def:"Not influenced by personal feelings; based on facts.",ex:"A good journalist tries to give an objective account of the news.",syn:["impartial","unbiased","neutral","fair"]},
+  {word:"passion",pos:"noun",pron:"/ˈpæʃ.ən/",def:"A strong feeling of enthusiasm or desire for something.",ex:"You can hear her passion for music every time she performs.",syn:["enthusiasm","love","devotion","intensity"]},
+  {word:"quest",pos:"noun",pron:"/kwest/",def:"A long search or pursuit for something important.",ex:"Her quest to improve her English took her across the world.",syn:["search","pursuit","mission","journey"]},
+  {word:"resolve",pos:"verb",pron:"/rɪˈzɒlv/",def:"To find a solution to a problem or disagreement.",ex:"They sat down to resolve their differences calmly.",syn:["solve","settle","fix","address"]},
+  {word:"speculate",pos:"verb",pron:"/ˈspek.jʊ.leɪt/",def:"To form a theory without firm evidence.",ex:"It's dangerous to speculate without checking the facts first.",syn:["guess","theorize","wonder","hypothesize"]},
+  {word:"transform",pos:"verb",pron:"/trænsˈfɔːm/",def:"To change something completely in form or nature.",ex:"Exercise can transform your mood and energy levels.",syn:["change","convert","alter","reshape"]},
+  {word:"underestimate",pos:"verb",pron:"/ˌʌn.dəˈres.tɪ.meɪt/",def:"To think something is smaller or less important than it is.",ex:"Don't underestimate the power of a well-written introduction.",syn:["misjudge","downplay","dismiss","minimize"]},
+  {word:"vivid",pos:"adjective",pron:"/ˈvɪv.ɪd/",def:"Producing strong, clear images in the mind; very intense.",ex:"She still has vivid memories of her first day in America.",syn:["bright","striking","strong","lifelike"]},
+  {word:"acknowledge",pos:"verb",pron:"/əkˈnɒl.ɪdʒ/",def:"To accept or admit the truth or existence of something.",ex:"He acknowledged that the mistake was his fault.",syn:["admit","recognize","accept","concede"]},
+  {word:"brevity",pos:"noun",pron:"/ˈbrev.ɪ.ti/",def:"The quality of being short and to the point.",ex:"Brevity is essential when sending a business text message.",syn:["shortness","conciseness","terseness","succinctness"]},
+  {word:"commitment",pos:"noun",pron:"/kəˈmɪt.mənt/",def:"A dedication to something; a promise to do something.",ex:"Learning a language requires long-term commitment.",syn:["dedication","devotion","loyalty","pledge"]},
+  {word:"deliberate",pos:"adjective",pron:"/dɪˈlɪb.ər.ət/",def:"Done on purpose; fully considered.",ex:"His deliberate choice of words showed how carefully he had prepared.",syn:["intentional","planned","conscious","purposeful"]},
+  {word:"empathize",pos:"verb",pron:"/ˈem.pə.θaɪz/",def:"To understand and share the feelings of another person.",ex:"A good counselor is trained to empathize with their clients.",syn:["relate","connect","understand","sympathize"]},
+  {word:"flexible",pos:"adjective",pron:"/ˈflek.sɪ.bəl/",def:"Able to change or adapt to different circumstances.",ex:"A flexible mindset is key to thriving in new environments.",syn:["adaptable","adjustable","versatile","open"]},
+  {word:"grateful",pos:"adjective",pron:"/ˈɡreɪt.fəl/",def:"Feeling or showing thanks for something received.",ex:"She was deeply grateful for the support she received during her studies.",syn:["thankful","appreciative","obliged","indebted"]},
+  {word:"hypothesis",pos:"noun",pron:"/haɪˈpɒθ.ɪ.sɪs/",def:"A proposed explanation made on the basis of limited evidence.",ex:"The scientist tested her hypothesis through a series of experiments.",syn:["theory","assumption","proposition","idea"]},
+  {word:"integrity",pos:"noun",pron:"/ɪnˈteɡ.rɪ.ti/",def:"The quality of being honest and having strong moral principles.",ex:"Her integrity earned the respect of everyone in the office.",syn:["honesty","morality","principles","ethics"]},
+  {word:"junction",pos:"noun",pron:"/ˈdʒʌŋk.ʃən/",def:"A point where two things meet or are joined.",ex:"We met at the junction of two busy streets downtown.",syn:["intersection","crossing","meeting point","joint"]},
+  {word:"kinship",pos:"noun",pron:"/ˈkɪn.ʃɪp/",def:"A feeling of being related or connected to others.",ex:"She felt a strong sense of kinship with other immigrants.",syn:["connection","bond","closeness","affinity"]},
+  {word:"lament",pos:"verb",pron:"/ləˈment/",def:"To express deep regret or sorrow about something.",ex:"He lamented the fact that he hadn't studied harder in school.",syn:["mourn","grieve","regret","bemoan"]},
+  {word:"magnitude",pos:"noun",pron:"/ˈmæɡ.nɪ.tjuːd/",def:"The great size or extent of something.",ex:"Nobody had anticipated the full magnitude of the storm.",syn:["size","scale","extent","importance"]},
+  {word:"navigate",pos:"verb",pron:"/ˈnæv.ɪ.ɡeɪt/",def:"To find your way through a complex situation or place.",ex:"Learning to navigate a new city can be both exciting and stressful.",syn:["guide","steer","manage","direct"]},
+  {word:"ominous",pos:"adjective",pron:"/ˈɒm.ɪ.nəs/",def:"Suggesting that something bad is going to happen.",ex:"The dark clouds on the horizon looked ominous.",syn:["threatening","foreboding","sinister","gloomy"]},
+  {word:"plausible",pos:"adjective",pron:"/ˈplɔː.zɪ.bəl/",def:"Seeming reasonable or probable.",ex:"His explanation sounded plausible, but we needed more evidence.",syn:["believable","credible","reasonable","likely"]},
+  {word:"query",pos:"noun",pron:"/ˈkwɪər.i/",def:"A question or doubt about something.",ex:"If you have any queries about your application, contact us directly.",syn:["question","inquiry","doubt","request"]},
+  {word:"rapport",pos:"noun",pron:"/ræˈpɔːr/",def:"A close and harmonious relationship; a sense of connection.",ex:"She quickly built a good rapport with her new coworkers.",syn:["bond","connection","understanding","trust"]},
+  {word:"spontaneous",pos:"adjective",pron:"/spɒnˈteɪ.ni.əs/",def:"Done without planning; natural and unforced.",ex:"Their spontaneous road trip turned into the best weekend of the year.",syn:["unplanned","impromptu","natural","impulsive"]},
+  {word:"tactful",pos:"adjective",pron:"/ˈtækt.fəl/",def:"Having skill in dealing with sensitive situations.",ex:"She gave tactful feedback without making anyone feel criticized.",syn:["diplomatic","sensitive","careful","considerate"]},
+  {word:"underlying",pos:"adjective",pron:"/ˌʌn.dəˈlaɪ.ɪŋ/",def:"Being below the surface; being the real cause of something.",ex:"The underlying cause of the argument was a lack of communication.",syn:["fundamental","root","hidden","core"]},
+  {word:"validate",pos:"verb",pron:"/ˈvæl.ɪ.deɪt/",def:"To confirm that something is correct or justified.",ex:"The second opinion validated the doctor's original diagnosis.",syn:["confirm","verify","prove","support"]},
+  {word:"wield",pos:"verb",pron:"/wiːld/",def:"To have and use power, influence, or a weapon.",ex:"The manager wielded a great deal of influence in the company.",syn:["use","exercise","hold","handle"]},
+  {word:"exemplary",pos:"adjective",pron:"/ɪɡˈzem.plər.i/",def:"Serving as a good example to others; very good.",ex:"Her exemplary performance earned her a promotion.",syn:["outstanding","model","excellent","commendable"]},
+  {word:"vulnerable",pos:"adjective",pron:"/ˈvʌl.nər.ə.bəl/",def:"Exposed to risk of harm; open to attack or damage.",ex:"Children are particularly vulnerable to the effects of online misinformation.",syn:["exposed","at risk","unprotected","defenseless"]},
+  {word:"abstract",pos:"adjective",pron:"/ˈæb.strækt/",def:"Existing as an idea rather than a physical object.",ex:"Freedom and justice are abstract concepts that are hard to define.",syn:["conceptual","theoretical","intangible","philosophical"]},
+  {word:"bias",pos:"noun",pron:"/ˈbaɪ.əs/",def:"An unfair preference for or against one thing over another.",ex:"Unconscious bias can affect hiring decisions without people realizing it.",syn:["prejudice","preference","slant","tendency"]},
+  {word:"catalyst",pos:"noun",pron:"/ˈkæt.ə.lɪst/",def:"Something that causes or speeds up change.",ex:"His book was a catalyst for important conversations about race.",syn:["trigger","cause","spark","driver"]},
+  {word:"depict",pos:"verb",pron:"/dɪˈpɪkt/",def:"To show or represent in a picture or description.",ex:"The novel depicts life in America through the eyes of an immigrant.",syn:["show","portray","represent","illustrate"]},
+  {word:"erode",pos:"verb",pron:"/ɪˈrəʊd/",def:"To gradually wear away or destroy.",ex:"Trust can erode quickly if people feel they are not being heard.",syn:["wear away","weaken","damage","undermine"]},
+  {word:"fundamental",pos:"adjective",pron:"/ˌfʌn.dəˈmen.təl/",def:"Of central importance; essential and basic.",ex:"Respect is a fundamental part of any healthy relationship.",syn:["basic","essential","core","key"]},
+  {word:"global",pos:"adjective",pron:"/ˈɡləʊ.bəl/",def:"Relating to the whole world; worldwide.",ex:"Climate change is a global problem that requires global solutions.",syn:["worldwide","international","universal","broad"]},
+  {word:"harbor",pos:"verb",pron:"/ˈhɑː.bər/",def:"To keep a feeling or thought in your mind for a long time.",ex:"It's not healthy to harbor resentment toward people who have wronged you.",syn:["hold","keep","maintain","nurse"]},
+  {word:"implicit",pos:"adjective",pron:"/ɪmˈplɪs.ɪt/",def:"Suggested or understood without being directly stated.",ex:"There was implicit pressure to work overtime, even though it wasn't required.",syn:["implied","indirect","unstated","understood"]},
+  {word:"justify",pos:"verb",pron:"/ˈdʒʌs.tɪ.faɪ/",def:"To give a sufficient reason or excuse for something.",ex:"She had to justify her absence to her supervisor.",syn:["explain","defend","excuse","rationalize"]},
+  {word:"keen",pos:"adjective",pron:"/kiːn/",def:"Very interested and eager about something.",ex:"He was keen to make a good impression on his first day.",syn:["eager","enthusiastic","willing","motivated"]},
+  {word:"liability",pos:"noun",pron:"/ˌlaɪ.əˈbɪl.ɪ.ti/",def:"Responsibility for something; something that causes problems.",ex:"A lack of communication is a liability in any team project.",syn:["responsibility","disadvantage","burden","weakness"]},
+  {word:"mitigate",pos:"verb",pron:"/ˈmɪt.ɪ.ɡeɪt/",def:"To make something less severe or serious.",ex:"Wearing sunscreen helps mitigate the risk of skin damage.",syn:["reduce","lessen","ease","minimize"]},
+  {word:"negotiate",pos:"verb",pron:"/nɪˈɡəʊ.ʃi.eɪt/",def:"To discuss something to reach an agreement.",ex:"She negotiated a higher salary before accepting the job offer.",syn:["discuss","bargain","arrange","work out"]},
+  {word:"obscure",pos:"adjective",pron:"/əbˈskjʊər/",def:"Not well known; difficult to understand.",ex:"The reference was too obscure for most of the audience to catch.",syn:["unknown","unclear","vague","puzzling"]},
+  {word:"priority",pos:"noun",pron:"/praɪˈɒr.ɪ.ti/",def:"Something that is more important than others.",ex:"Getting enough sleep should be a health priority for everyone.",syn:["importance","preference","first concern","main focus"]},
+  {word:"reciprocal",pos:"adjective",pron:"/rɪˈsɪp.rɪ.kəl/",def:"Done or felt equally by both sides.",ex:"A good friendship is built on reciprocal respect and trust.",syn:["mutual","shared","joint","equal"]},
+  {word:"succinct",pos:"adjective",pron:"/səkˈsɪŋkt/",def:"Expressed clearly in few words.",ex:"The best presentations are succinct and get to the point quickly.",syn:["brief","concise","short","pithy"]},
+  {word:"tolerance",pos:"noun",pron:"/ˈtɒl.ər.əns/",def:"The ability to accept things you disagree with.",ex:"Living in a diverse city taught her the value of tolerance.",syn:["acceptance","patience","open-mindedness","understanding"]},
+  {word:"unprecedented",pos:"adjective",pron:"/ʌnˈpres.ɪ.den.tɪd/",def:"Never done or known before.",ex:"The team achieved an unprecedented three consecutive victories.",syn:["unheard-of","extraordinary","novel","unparalleled"]},
+  {word:"vigorous",pos:"adjective",pron:"/ˈvɪɡ.ər.əs/",def:"Strong, healthy, and full of energy.",ex:"A vigorous debate broke out among the students after the lecture.",syn:["energetic","strong","active","forceful"]},
+  {word:"wisdom",pos:"noun",pron:"/ˈwɪz.dəm/",def:"The quality of having experience, knowledge, and good judgment.",ex:"With age comes wisdom — and also a few gray hairs.",syn:["knowledge","insight","judgment","understanding"]},
+  {word:"abundance",pos:"noun",pron:"/əˈbʌn.dəns/",def:"A very large quantity of something; more than enough.",ex:"The market was filled with an abundance of fresh produce.",syn:["plenty","wealth","surplus","overflow"]},
+  {word:"barrier",pos:"noun",pron:"/ˈbær.i.ər/",def:"Something that prevents progress or access.",ex:"Language can be a barrier when moving to a new country.",syn:["obstacle","block","hurdle","wall"]},
+  {word:"competent",pos:"adjective",pron:"/ˈkɒm.pɪ.tənt/",def:"Having the skill or ability to do something well.",ex:"She was a highly competent programmer with ten years of experience.",syn:["capable","skilled","qualified","able"]},
+  {word:"decisive",pos:"adjective",pron:"/dɪˈsaɪ.sɪv/",def:"Settling an issue; having the ability to make decisions quickly.",ex:"A good leader needs to be decisive, especially in a crisis.",syn:["resolute","determined","firm","clear-cut"]},
+  {word:"elaborate",pos:"adjective",pron:"/ɪˈlæb.ər.ɪt/",def:"Involving many careful details; complicated.",ex:"She wore an elaborate dress with layers of embroidery.",syn:["detailed","complex","intricate","ornate"]},
+  {word:"fluctuate",pos:"verb",pron:"/ˈflʌk.tʃu.eɪt/",def:"To change continually between levels or states.",ex:"Cryptocurrency prices can fluctuate dramatically within a single day.",syn:["vary","change","shift","swing"]},
+  {word:"gratitude",pos:"noun",pron:"/ˈɡræt.ɪ.tjuːd/",def:"The feeling of being grateful and thankful.",ex:"She expressed her gratitude to the team who helped her settle in.",syn:["thankfulness","appreciation","recognition","acknowledgment"]},
+  {word:"hinder",pos:"verb",pron:"/ˈhɪn.dər/",def:"To make it difficult for something to happen.",ex:"Fear of making mistakes can hinder language learning.",syn:["obstruct","slow down","prevent","block"]},
+  {word:"inclusive",pos:"adjective",pron:"/ɪnˈkluː.sɪv/",def:"Covering all people and not leaving anyone out.",ex:"The new policy aimed to create a more inclusive workplace.",syn:["diverse","open","welcoming","all-embracing"]},
+  {word:"jargon",pos:"noun",pron:"/ˈdʒɑː.ɡən/",def:"Special words used by a particular group that are hard for others to understand.",ex:"The manual was full of technical jargon that confused new users.",syn:["terminology","slang","lingo","buzzwords"]},
+  {word:"legitimate",pos:"adjective",pron:"/lɪˈdʒɪt.ɪ.mət/",def:"Conforming to the law or accepted rules; real and valid.",ex:"She had a legitimate reason for missing the class.",syn:["valid","lawful","genuine","justified"]},
+  {word:"momentum",pos:"noun",pron:"/məˈmen.təm/",def:"The force or energy that keeps something moving forward.",ex:"Once you build momentum with a habit, it becomes easier to maintain.",syn:["force","energy","drive","impetus"]},
+  {word:"notion",pos:"noun",pron:"/ˈnəʊ.ʃən/",def:"A concept or belief about something.",ex:"She challenged the notion that success only comes from hard work.",syn:["idea","concept","belief","view"]},
+  {word:"oblige",pos:"verb",pron:"/əˈblaɪdʒ/",def:"To make someone legally or morally required to do something.",ex:"She felt obliged to help her neighbor whenever she could.",syn:["require","compel","force","commit"]},
+  {word:"premise",pos:"noun",pron:"/ˈprem.ɪs/",def:"A statement assumed to be true as the basis for a conclusion.",ex:"The entire argument is built on a false premise.",syn:["assumption","basis","principle","starting point"]},
+  {word:"reassure",pos:"verb",pron:"/ˌriː.əˈʃʊər/",def:"To say things to remove someone's doubts or fears.",ex:"He reassured his mother that everything would be fine.",syn:["comfort","calm","encourage","soothe"]},
+  {word:"setback",pos:"noun",pron:"/ˈset.bæk/",def:"A reversal or problem that delays or prevents progress.",ex:"Losing her first job was a setback, but she bounced back quickly.",syn:["obstacle","delay","reverse","problem"]},
+  {word:"turbulent",pos:"adjective",pron:"/ˈtɜː.bjʊ.lənt/",def:"Full of disorder, confusion, or conflict.",ex:"She managed to stay calm during a very turbulent period at work.",syn:["chaotic","unstable","stormy","rough"]},
+  {word:"uphold",pos:"verb",pron:"/ʌpˈhəʊld/",def:"To maintain or support a rule, value, or decision.",ex:"It's important to uphold the values you believe in, even under pressure.",syn:["support","maintain","defend","preserve"]},
+  {word:"virtue",pos:"noun",pron:"/ˈvɜː.tjuː/",def:"A good moral quality; a good feature of something.",ex:"Patience is a virtue that takes time and practice to develop.",syn:["quality","value","merit","strength"]},
+  {word:"wholesome",pos:"adjective",pron:"/ˈhəʊl.səm/",def:"Conducive to good health or morals; positive and healthy.",ex:"Cooking at home gives you control over wholesome ingredients.",syn:["healthy","good","clean","nutritious"]},
+  {word:"yearning",pos:"noun",pron:"/ˈjɜːn.ɪŋ/",def:"A feeling of strong desire or longing.",ex:"She felt a deep yearning to visit the country she grew up hearing about.",syn:["longing","desire","craving","hunger"]},
+  {word:"zeal",pos:"noun",pron:"/ziːl/",def:"Great energy and enthusiasm in pursuit of something.",ex:"His zeal for learning languages pushed him to study every single day.",syn:["enthusiasm","passion","eagerness","drive"]},
+  {word:"absorb",pos:"verb",pron:"/əbˈzɔːb/",def:"To take in or soak up something, like information or liquid.",ex:"Children absorb new languages much faster than adults.",syn:["soak up","take in","assimilate","learn"]},
+  {word:"breakthrough",pos:"noun",pron:"/ˈbreɪk.θruː/",def:"A sudden important discovery or development.",ex:"The new treatment was a major breakthrough in cancer research.",syn:["advance","discovery","progress","development"]},
+  {word:"coherence",pos:"noun",pron:"/kəʊˈhɪər.əns/",def:"The quality of being logical and consistent.",ex:"The essay lacked coherence — the ideas didn't connect well.",syn:["consistency","logic","clarity","organization"]},
+  {word:"divert",pos:"verb",pron:"/daɪˈvɜːt/",def:"To cause something to change direction; to entertain.",ex:"He diverted the conversation away from the difficult topic.",syn:["redirect","distract","turn","entertain"]},
+  {word:"eager",pos:"adjective",pron:"/ˈiː.ɡər/",def:"Very enthusiastic and keen to do something.",ex:"She was eager to start her new job and make a great impression.",syn:["keen","enthusiastic","willing","excited"]},
+  {word:"frugal",pos:"adjective",pron:"/ˈfruː.ɡəl/",def:"Using money and resources carefully and not wastefully.",ex:"Living a frugal lifestyle helped him save for a house.",syn:["thrifty","careful","economical","sparing"]},
+  {word:"gauge",pos:"verb",pron:"/ɡeɪdʒ/",def:"To estimate or measure something.",ex:"It was hard to gauge how the audience was feeling during the speech.",syn:["measure","assess","estimate","judge"]},
+  {word:"harmonious",pos:"adjective",pron:"/hɑːˈməʊ.ni.əs/",def:"Forming a pleasing or consistent whole; free from conflict.",ex:"They worked together in a harmonious and productive way.",syn:["balanced","peaceful","unified","agreeable"]},
+  {word:"impartial",pos:"adjective",pron:"/ɪmˈpɑː.ʃəl/",def:"Treating all sides equally; not biased.",ex:"A judge must be impartial when making legal decisions.",syn:["fair","neutral","unbiased","objective"]},
+  {word:"justify",pos:"verb",pron:"/ˈdʒʌs.tɪ.faɪ/",def:"To prove or show to be reasonable.",ex:"The results justify the time we invested in the project.",syn:["prove","warrant","support","validate"]},
+  {word:"knack",pos:"noun",pron:"/næk/",def:"A natural skill or special ability for doing something.",ex:"She has a knack for explaining complex ideas in simple terms.",syn:["talent","skill","gift","ability"]},
+  {word:"lucid",pos:"adjective",pron:"/ˈluː.sɪd/",def:"Expressed clearly; easy to understand.",ex:"His lucid explanation helped everyone follow the difficult argument.",syn:["clear","intelligible","understandable","transparent"]},
+  {word:"mundane",pos:"adjective",pron:"/mʌnˈdeɪn/",def:"Lacking interest or excitement; ordinary.",ex:"Even mundane tasks become easier when you listen to good music.",syn:["boring","ordinary","routine","everyday"]},
+  {word:"nourish",pos:"verb",pron:"/ˈnʌr.ɪʃ/",def:"To provide food or help something grow and develop.",ex:"Good habits nourish your mind as much as healthy food nourishes your body.",syn:["feed","support","sustain","develop"]},
+  {word:"overestimate",pos:"verb",pron:"/ˌəʊ.vəˈres.tɪ.meɪt/",def:"To believe something is better or larger than it actually is.",ex:"Don't overestimate how much you can get done in a single day.",syn:["overvalue","misjudge","exaggerate","overrate"]},
+  {word:"patient",pos:"adjective",pron:"/ˈpeɪ.ʃənt/",def:"Able to wait calmly without getting irritated.",ex:"Language learning requires being patient with yourself.",syn:["calm","tolerant","steady","persevering"]},
+  {word:"quick-witted",pos:"adjective",pron:"/ˌkwɪkˈwɪt.ɪd/",def:"Able to think and respond quickly.",ex:"She was quick-witted and always had a clever answer ready.",syn:["sharp","clever","alert","smart"]},
+  {word:"reinforce",pos:"verb",pron:"/ˌriː.ɪnˈfɔːs/",def:"To make something stronger or more effective.",ex:"Repeating vocabulary in context helps reinforce your memory of it.",syn:["strengthen","support","boost","confirm"]},
+  {word:"steadfast",pos:"adjective",pron:"/ˈsted.fɑːst/",def:"Firm and unwavering in purpose or loyalty.",ex:"He remained steadfast in his belief that things would improve.",syn:["firm","loyal","devoted","committed"]},
+  {word:"thrive",pos:"verb",pron:"/θraɪv/",def:"To grow, develop, and be successful.",ex:"She thrives under pressure and performs best before a deadline.",syn:["prosper","flourish","succeed","grow"]},
+  {word:"unwavering",pos:"adjective",pron:"/ʌnˈweɪ.vər.ɪŋ/",def:"Steady and strong; not changing in determination.",ex:"Her unwavering support helped him through a very difficult time.",syn:["firm","steady","resolute","constant"]},
+  {word:"vital",pos:"adjective",pron:"/ˈvaɪ.tl/",def:"Absolutely necessary or extremely important.",ex:"Regular feedback is vital for growth in any new skill.",syn:["essential","crucial","critical","necessary"]},
+  {word:"whim",pos:"noun",pron:"/wɪm/",def:"A sudden desire or change of mind without obvious reason.",ex:"On a whim, she decided to take a weekend trip to San Francisco.",syn:["impulse","fancy","urge","caprice"]},
+  {word:"xenial",pos:"adjective",pron:"/ˈziː.ni.əl/",def:"Friendly to strangers; having good hospitality.",ex:"The xenial host made every guest feel at home immediately.",syn:["hospitable","welcoming","friendly","generous"]},
+  {word:"yearn",pos:"verb",pron:"/jɜːn/",def:"To have an intense feeling of desire or longing.",ex:"He yearned to speak English fluently and feel fully understood.",syn:["long for","desire","crave","wish for"]},
+  {word:"zenith",pos:"noun",pron:"/ˈzen.ɪθ/",def:"The highest point or peak of something.",ex:"Her career reached its zenith when she was appointed to the board.",syn:["peak","summit","apex","top"]},
+  {word:"affirmation",pos:"noun",pron:"/ˌæf.ɜːˈmeɪ.ʃən/",def:"A statement that something is true; emotional support.",ex:"Daily affirmations can help build a more positive mindset.",syn:["confirmation","declaration","assertion","support"]},
+  {word:"benchmark",pos:"noun",pron:"/ˈbentʃ.mɑːk/",def:"A standard point of reference for measuring or comparing.",ex:"The test score serves as a benchmark for reading ability.",syn:["standard","measure","reference","baseline"]},
+  {word:"captivate",pos:"verb",pron:"/ˈkæp.tɪ.veɪt/",def:"To attract and hold someone's attention completely.",ex:"The documentary captivated viewers from start to finish.",syn:["fascinate","enthrall","enchant","engage"]},
+  {word:"deduce",pos:"verb",pron:"/dɪˈdjuːs/",def:"To reach a conclusion by reasoning from known facts.",ex:"From her tone of voice, I could deduce that she was upset.",syn:["conclude","infer","work out","reason"]},
+  {word:"endeavor",pos:"noun",pron:"/ɪnˈdev.ər/",def:"A serious attempt to achieve something.",ex:"Learning a language is a noble endeavor that takes real commitment.",syn:["effort","attempt","venture","pursuit"]},
+  {word:"fluent",pos:"adjective",pron:"/ˈfluː.ənt/",def:"Able to speak or write a language smoothly and easily.",ex:"After two years of practice, she became fluent in conversational English.",syn:["smooth","natural","proficient","articulate"]},
+  {word:"grieve",pos:"verb",pron:"/ɡriːv/",def:"To feel deep sadness, especially from a loss.",ex:"It's natural to grieve when something important comes to an end.",syn:["mourn","sorrow","suffer","lament"]},
+  {word:"habitual",pos:"adjective",pron:"/həˈbɪtʃ.u.əl/",def:"Done as a habit; regular and repeated.",ex:"Her habitual morning routine helped her stay focused all day.",syn:["regular","usual","routine","repeated"]},
+  {word:"incline",pos:"verb",pron:"/ɪnˈklaɪn/",def:"To tend toward; to have a preference for something.",ex:"She was inclined to agree with his suggestion after thinking it over.",syn:["lean toward","tend","prefer","be drawn to"]},
+  {word:"juxtapose",pos:"verb",pron:"/ˈdʒʌk.stə.pəʊz/",def:"To place two things side by side to compare or contrast them.",ex:"The article juxtaposed the lives of two very different families.",syn:["contrast","compare","place side by side","set against"]},
+  {word:"kindle",pos:"verb",pron:"/ˈkɪn.dəl/",def:"To arouse or inspire a feeling; to start a fire.",ex:"A good teacher can kindle a lifelong love of learning.",syn:["ignite","inspire","awaken","spark"]},
+  {word:"laud",pos:"verb",pron:"/lɔːd/",def:"To praise highly and enthusiastically.",ex:"Critics lauded the film as a masterpiece of modern cinema.",syn:["praise","applaud","celebrate","commend"]},
+  {word:"meander",pos:"verb",pron:"/miˈæn.dər/",def:"To wander slowly without a fixed route; to talk without a clear point.",ex:"We meandered through the streets without any particular destination.",syn:["wander","drift","stroll","ramble"]},
+  {word:"nonchalant",pos:"adjective",pron:"/ˈnɒn.ʃə.lɑːnt/",def:"Appearing calm and not concerned; casually unconcerned.",ex:"Despite the chaos, she appeared completely nonchalant.",syn:["casual","calm","relaxed","unbothered"]},
+  {word:"opaque",pos:"adjective",pron:"/əʊˈpeɪk/",def:"Not able to be seen through; hard to understand.",ex:"The contract language was deliberately opaque and confusing.",syn:["unclear","impenetrable","murky","cloudy"]},
+  {word:"prominent",pos:"adjective",pron:"/ˈprɒm.ɪ.nənt/",def:"Important and well known; easily seen.",ex:"She became a prominent voice in the immigration reform movement.",syn:["notable","famous","leading","visible"]},
+  {word:"quench",pos:"verb",pron:"/kwentʃ/",def:"To satisfy a desire or need; to put out a fire.",ex:"She read widely to quench her thirst for knowledge.",syn:["satisfy","fulfill","relieve","extinguish"]},
+  {word:"refine",pos:"verb",pron:"/rɪˈfaɪn/",def:"To improve something by making small changes.",ex:"She spent hours refining her essay before submitting it.",syn:["improve","polish","perfect","develop"]},
+  {word:"sincere",pos:"adjective",pron:"/sɪnˈsɪər/",def:"Genuine and not pretending; honest.",ex:"He gave a sincere apology that everyone in the room could feel.",syn:["genuine","honest","real","heartfelt"]},
+  {word:"tangible",pos:"adjective",pron:"/ˈtæn.dʒɪ.bəl/",def:"Able to be touched or felt; clear and definite.",ex:"She saw tangible results from her hard work after just one month.",syn:["real","concrete","physical","actual"]},
+  {word:"unprecedented",pos:"adjective",pron:"/ʌnˈpres.ɪ.den.tɪd/",def:"Something that has never happened before.",ex:"She achieved unprecedented success in her first year at the company.",syn:["new","novel","unheard-of","historic"]},
+  {word:"vague",pos:"adjective",pron:"/veɪɡ/",def:"Not clearly expressed or understood; unclear.",ex:"His directions were so vague that we ended up completely lost.",syn:["unclear","imprecise","hazy","uncertain"]},
+  {word:"wane",pos:"verb",pron:"/weɪn/",def:"To gradually decrease in size, strength, or influence.",ex:"Interest in the topic began to wane after the first few months.",syn:["decrease","fade","decline","diminish"]},
+  {word:"yearn",pos:"verb",pron:"/jɜːn/",def:"To have a deep longing for something.",ex:"After years abroad, he yearned for the familiar food of his hometown.",syn:["long for","crave","miss","desire"]},
+  {word:"accentuate",pos:"verb",pron:"/əkˈsen.tʃu.eɪt/",def:"To make something more noticeable or prominent.",ex:"The bright colors accentuated the beauty of the landscape.",syn:["emphasize","highlight","stress","intensify"]},
+  {word:"benevolent",pos:"adjective",pron:"/bɪˈnev.ə.lənt/",def:"Well-meaning and kind; charitable.",ex:"The benevolent donor gave anonymously to many local charities.",syn:["kind","generous","charitable","compassionate"]},
+  {word:"circumvent",pos:"verb",pron:"/ˌsɜː.kəmˈvent/",def:"To find a way around an obstacle or rule.",ex:"He tried to circumvent the process, which caused more problems.",syn:["bypass","avoid","evade","work around"]},
+  {word:"daunting",pos:"adjective",pron:"/ˈdɔːn.tɪŋ/",def:"Seeming difficult and likely to discourage someone.",ex:"Moving to a new country can feel daunting at first.",syn:["intimidating","overwhelming","challenging","scary"]},
+  {word:"empower",pos:"verb",pron:"/ɪmˈpaʊ.ər/",def:"To give someone more confidence or authority to act.",ex:"Education empowers people to take control of their own futures.",syn:["enable","equip","authorize","strengthen"]},
+  {word:"fluctuation",pos:"noun",pron:"/ˌflʌk.tʃuˈeɪ.ʃən/",def:"Irregular up and down changes in something.",ex:"There were wild fluctuations in the stock market last week.",syn:["variation","change","instability","shift"]},
+  {word:"glean",pos:"verb",pron:"/ɡliːn/",def:"To gather information gradually from different sources.",ex:"She gleaned valuable insights from conversations with native speakers.",syn:["gather","collect","extract","pick up"]},
+  {word:"holistic",pos:"adjective",pron:"/hɒˈlɪs.tɪk/",def:"Treating something as a whole, not just its parts.",ex:"The therapist took a holistic approach to treating her patient.",syn:["complete","whole","comprehensive","all-encompassing"]},
+  {word:"infer",pos:"verb",pron:"/ɪnˈfɜːr/",def:"To conclude based on evidence and reasoning.",ex:"From her body language, I inferred that she was uncomfortable.",syn:["conclude","deduce","gather","understand"]},
+  {word:"jaded",pos:"adjective",pron:"/ˈdʒeɪ.dɪd/",def:"Tired of something due to too much exposure.",ex:"After years of routine, he began to feel jaded about his career.",syn:["bored","worn out","cynical","indifferent"]},
+  {word:"keen",pos:"adjective",pron:"/kiːn/",def:"Having a sharp mind; very interested and enthusiastic.",ex:"She had a keen interest in how the brain processes language.",syn:["sharp","eager","perceptive","enthusiastic"]},
+  {word:"lofty",pos:"adjective",pron:"/ˈlɒf.ti/",def:"High in moral quality; tall and imposing; overly proud.",ex:"She had lofty ambitions to become a UN ambassador.",syn:["grand","ambitious","high","noble"]},
+  {word:"muster",pos:"verb",pron:"/ˈmʌs.tər/",def:"To gather strength, support, or courage.",ex:"She mustered all her courage to speak in front of the class.",syn:["gather","summon","call up","collect"]},
+  {word:"neglect",pos:"verb",pron:"/nɪˈɡlekt/",def:"To fail to give proper care or attention to something.",ex:"Don't neglect the small words — they matter just as much as big ones.",syn:["ignore","overlook","disregard","forget"]},
+  {word:"ominous",pos:"adjective",pron:"/ˈɒm.ɪ.nəs/",def:"Giving the impression that something bad will happen.",ex:"The ominous silence before the storm made everyone nervous.",syn:["threatening","sinister","gloomy","foreboding"]},
+  {word:"ponder",pos:"verb",pron:"/ˈpɒn.dər/",def:"To think about something carefully and seriously.",ex:"She pondered the question for a long time before answering.",syn:["consider","reflect","think over","contemplate"]},
+  {word:"quandary",pos:"noun",pron:"/ˈkwɒn.dər.i/",def:"A state of uncertainty about what to do.",ex:"She was in a quandary about whether to accept the new job offer.",syn:["dilemma","confusion","difficulty","predicament"]},
+  {word:"rationale",pos:"noun",pron:"/ˌræʃ.əˈnɑːl/",def:"A set of reasons or logical basis for something.",ex:"He clearly explained the rationale behind the new company policy.",syn:["reason","logic","justification","explanation"]},
+  {word:"scrutiny",pos:"noun",pron:"/ˈskruː.tɪ.ni/",def:"Close and detailed examination.",ex:"Her work was placed under intense scrutiny before publication.",syn:["examination","inspection","attention","analysis"]},
+  {word:"tedious",pos:"adjective",pron:"/ˈtiː.di.əs/",def:"Too long and slow; boring and tiresome.",ex:"Memorizing vocabulary lists can feel tedious without context.",syn:["boring","dull","tiresome","repetitive"]},
+  {word:"ubiquitous",pos:"adjective",pron:"/juːˈbɪk.wɪ.təs/",def:"Present or appearing everywhere.",ex:"Smartphones have become ubiquitous in modern life.",syn:["everywhere","universal","widespread","omnipresent"]},
+  {word:"viable",pos:"adjective",pron:"/ˈvaɪ.ə.bəl/",def:"Capable of working successfully; feasible.",ex:"Is working from home a viable long-term option for your team?",syn:["feasible","practical","workable","achievable"]},
+  {word:"wistful",pos:"adjective",pron:"/ˈwɪst.fəl/",def:"Having a feeling of vague longing or regret.",ex:"She gave a wistful smile as she looked at old photographs.",syn:["nostalgic","longing","reflective","melancholic"]},
+  {word:"xenophile",pos:"noun",pron:"/ˈzen.ə.faɪl/",def:"A person who is attracted to foreign cultures or people.",ex:"As a xenophile, she collected souvenirs from every country she visited.",syn:["traveler","cosmopolitan","explorer","globalist"]},
+  {word:"yield",pos:"noun",pron:"/jiːld/",def:"The amount produced from an effort.",ex:"The yield from her studies improved significantly after she changed her method.",syn:["result","output","return","product"]},
+  {word:"zest",pos:"noun",pron:"/zest/",def:"Great enthusiasm and energy; enjoyment.",ex:"She approached every new lesson with genuine zest and curiosity.",syn:["enthusiasm","energy","eagerness","relish"]},
+  {word:"assiduous",pos:"adjective",pron:"/əˈsɪd.ju.əs/",def:"Showing great care and effort; very hardworking.",ex:"Her assiduous preparation paid off on exam day.",syn:["diligent","hardworking","dedicated","persistent"]},
+  {word:"buoyant",pos:"adjective",pron:"/ˈbɔɪ.ənt/",def:"Cheerful and optimistic; able to float.",ex:"Despite the difficulties, she remained buoyant and full of energy.",syn:["cheerful","upbeat","positive","light-hearted"]},
+  {word:"composure",pos:"noun",pron:"/kəmˈpəʊ.ʒər/",def:"The state of being calm and in control.",ex:"She maintained her composure during a very stressful interview.",syn:["calm","self-control","poise","tranquility"]},
+  {word:"diffident",pos:"adjective",pron:"/ˈdɪf.ɪ.dənt/",def:"Modest or shy because of a lack of self-confidence.",ex:"He was diffident about sharing his ideas in large group settings.",syn:["shy","timid","unconfident","reserved"]},
+  {word:"eccentric",pos:"adjective",pron:"/ɪkˈsen.trɪk/",def:"Unconventional and slightly strange in behavior.",ex:"Her eccentric style made her stand out in any crowd.",syn:["unusual","quirky","odd","unconventional"]},
+  {word:"fervent",pos:"adjective",pron:"/ˈfɜː.vənt/",def:"Having or showing great warmth of feeling; intense.",ex:"She was a fervent believer in the power of education to change lives.",syn:["passionate","enthusiastic","intense","devoted"]},
+  {word:"grim",pos:"adjective",pron:"/ɡrɪm/",def:"Very serious and worrying; without hope.",ex:"The news painted a grim picture of the economic situation.",syn:["bleak","harsh","serious","forbidding"]},
+  {word:"harbinger",pos:"noun",pron:"/ˈhɑː.bɪn.dʒər/",def:"A person or thing that announces or signals what is to come.",ex:"The first warm days of March are a harbinger of spring.",syn:["sign","omen","herald","indicator"]},
+  {word:"immutable",pos:"adjective",pron:"/ɪˈmjuː.tə.bəl/",def:"Not capable of or susceptible to change.",ex:"Some people treat language rules as immutable when in fact they evolve.",syn:["unchangeable","fixed","permanent","constant"]},
+  {word:"judicious",pos:"adjective",pron:"/dʒuːˈdɪʃ.əs/",def:"Having or showing good judgment; wise.",ex:"A judicious use of words can make a powerful impact.",syn:["wise","sensible","careful","shrewd"]},
+  {word:"laconic",pos:"adjective",pron:"/ləˈkɒn.ɪk/",def:"Using very few words to express something.",ex:"His laconic reply — 'Fine' — suggested he was less than happy.",syn:["brief","concise","terse","understated"]},
+  {word:"malleable",pos:"adjective",pron:"/ˈmæl.i.ə.bəl/",def:"Easy to influence or change; able to be shaped.",ex:"Young minds are malleable, making early education especially important.",syn:["flexible","adaptable","pliable","impressionable"]},
+  {word:"nebulous",pos:"adjective",pron:"/ˈneb.jʊ.ləs/",def:"Not clearly defined; vague and uncertain.",ex:"His plans were still nebulous and he hadn't decided on the details.",syn:["vague","hazy","unclear","uncertain"]},
+  {word:"obstinate",pos:"adjective",pron:"/ˈɒb.stɪ.nɪt/",def:"Stubbornly refusing to change one's opinion.",ex:"He was so obstinate that he refused to consider any other option.",syn:["stubborn","inflexible","pigheaded","unyielding"]},
+  {word:"peripheral",pos:"adjective",pron:"/pəˈrɪf.ər.əl/",def:"Relating to the edge of something; not central or important.",ex:"She felt peripheral to the discussion and struggled to join in.",syn:["minor","secondary","outer","marginal"]},
+  {word:"quirky",pos:"adjective",pron:"/ˈkwɜː.ki/",def:"Unusual in an interesting or amusing way.",ex:"Her quirky sense of humor made her very popular with the team.",syn:["unusual","eccentric","funny","odd"]},
+  {word:"rigorous",pos:"adjective",pron:"/ˈrɪɡ.ər.əs/",def:"Extremely thorough and careful; demanding.",ex:"Learning a language requires rigorous and consistent daily practice.",syn:["thorough","strict","demanding","exact"]},
+  {word:"superficial",pos:"adjective",pron:"/ˌsuː.pəˈfɪʃ.əl/",def:"Existing only on the surface; lacking depth.",ex:"Their friendship felt superficial — they never talked about real things.",syn:["shallow","surface-level","trivial","cursory"]},
+  {word:"tentative",pos:"adjective",pron:"/ˈten.tə.tɪv/",def:"Uncertain or cautious; done as a trial.",ex:"She took a tentative first step toward speaking up in meetings.",syn:["uncertain","hesitant","cautious","provisional"]},
+  {word:"unwieldy",pos:"adjective",pron:"/ʌnˈwiːl.di/",def:"Difficult to move or handle because of size or shape.",ex:"The unwieldy stack of papers made it hard to find anything.",syn:["awkward","clumsy","unmanageable","bulky"]},
+  {word:"verbose",pos:"adjective",pron:"/vɜːˈbəʊs/",def:"Using more words than necessary; long-winded.",ex:"His verbose answer could have been said in half the words.",syn:["wordy","long-winded","rambling","repetitive"]},
+  {word:"wistful",pos:"adjective",pron:"/ˈwɪst.fəl/",def:"Feeling sad and longing for something in the past.",ex:"She felt wistful as she remembered her first days learning English.",syn:["nostalgic","longing","reflective","sad"]},
+  {word:"exacerbate",pos:"verb",pron:"/ɪɡˈzæs.ə.beɪt/",def:"To make something bad even worse.",ex:"Working without breaks can exacerbate stress and reduce productivity.",syn:["worsen","intensify","aggravate","inflame"]},
+  {word:"fervor",pos:"noun",pron:"/ˈfɜː.vər/",def:"Intense and passionate feeling.",ex:"She spoke with such fervor that the audience was completely moved.",syn:["passion","enthusiasm","intensity","zeal"]},
+  {word:"gratuitous",pos:"adjective",pron:"/ɡrəˈtjuː.ɪ.təs/",def:"Uncalled for; not necessary; done without reason.",ex:"The film included gratuitous violence that served no purpose.",syn:["unnecessary","unwarranted","excessive","pointless"]},
+  {word:"impede",pos:"verb",pron:"/ɪmˈpiːd/",def:"To delay or prevent progress; to obstruct.",ex:"A lack of vocabulary can impede your ability to express yourself clearly.",syn:["hinder","obstruct","block","slow down"]},
+  {word:"intermittent",pos:"adjective",pron:"/ˌɪn.təˈmɪt.ənt/",def:"Stopping and starting at irregular intervals.",ex:"She had intermittent internet access throughout the day.",syn:["irregular","occasional","sporadic","on-and-off"]},
+  {word:"jovial",pos:"adjective",pron:"/ˈdʒəʊ.vi.əl/",def:"Cheerful and friendly; full of good humor.",ex:"His jovial personality made every team meeting feel less stressful.",syn:["cheerful","jolly","friendly","good-humored"]},
+  {word:"languid",pos:"adjective",pron:"/ˈlæŋ.ɡwɪd/",def:"Weak and tired; lacking energy or enthusiasm.",ex:"The long afternoon made her feel languid and distracted.",syn:["tired","slow","listless","relaxed"]},
+  {word:"meager",pos:"adjective",pron:"/ˈmiː.ɡər/",def:"Very small or insufficient in amount.",ex:"She worked hard despite earning a meager income.",syn:["small","poor","scanty","insufficient"]},
+  {word:"naïve",pos:"adjective",pron:"/naɪˈiːv/",def:"Lacking experience or knowledge; too trusting.",ex:"It was naïve to think the first draft would be perfect.",syn:["innocent","inexperienced","trusting","simple"]},
+  {word:"obtuse",pos:"adjective",pron:"/əbˈtjuːs/",def:"Slow to understand; not clear or direct.",ex:"He was being deliberately obtuse to avoid answering the question.",syn:["slow","dull","unclear","thick"]},
+  {word:"poignant",pos:"adjective",pron:"/ˈpɔɪ.njənt/",def:"Evoking a keen sense of sadness or regret.",ex:"The movie had a poignant ending that made many people cry.",syn:["moving","touching","emotional","affecting"]},
+  {word:"querulous",pos:"adjective",pron:"/ˈkwer.ʊ.ləs/",def:"Complaining in an irritated way; whiny.",ex:"His querulous tone made it hard to take his complaint seriously.",syn:["complaining","whiny","irritable","petulant"]},
+  {word:"resilience",pos:"noun",pron:"/rɪˈzɪl.i.əns/",def:"The ability to recover quickly from difficulty.",ex:"Resilience is one of the most important qualities an immigrant can develop.",syn:["toughness","strength","endurance","adaptability"]},
+  {word:"shrewd",pos:"adjective",pron:"/ʃruːd/",def:"Having sharp judgment; clever in practical matters.",ex:"She made a shrewd business decision that saved the company money.",syn:["clever","sharp","astute","intelligent"]},
+  {word:"transient",pos:"adjective",pron:"/ˈtræn.zi.ənt/",def:"Lasting only for a short time; temporary.",ex:"Happiness that depends on things is often transient.",syn:["temporary","brief","short-lived","passing"]},
+  {word:"unassuming",pos:"adjective",pron:"/ˌʌn.əˈsjuː.mɪŋ/",def:"Not pretentious; modest and not seeking attention.",ex:"Despite his success, he was unassuming and easy to talk to.",syn:["modest","humble","quiet","low-key"]},
+  {word:"vehement",pos:"adjective",pron:"/ˈviː.ɪ.mənt/",def:"Showing strong feeling; very forceful.",ex:"She was vehement in her opposition to the proposed changes.",syn:["forceful","passionate","intense","strong"]},
+  {word:"wane",pos:"noun",pron:"/weɪn/",def:"A gradual decrease in strength or importance.",ex:"As interest in the trend began to wane, brands moved on.",syn:["decline","decrease","fall","reduction"]},
+  {word:"exuberant",pos:"adjective",pron:"/ɪɡˈzjuː.bər.ənt/",def:"Full of energy, excitement, and cheerfulness.",ex:"The exuberant crowd celebrated as the team scored the final goal.",syn:["enthusiastic","lively","energetic","joyful"]},
+  {word:"futile",pos:"adjective",pron:"/ˈfjuː.taɪl/",def:"Producing no useful result; having no effect.",ex:"It felt futile to keep trying when nothing seemed to work.",syn:["useless","pointless","ineffective","hopeless"]},
+  {word:"gregarious",pos:"adjective",pron:"/ɡrɪˈɡeər.i.əs/",def:"Fond of company; sociable.",ex:"She was naturally gregarious and made friends wherever she went.",syn:["sociable","outgoing","friendly","extroverted"]},
+  {word:"hasten",pos:"verb",pron:"/ˈheɪ.sən/",def:"To move or act quickly; to make something happen sooner.",ex:"She hastened to finish the task before the meeting started.",syn:["hurry","speed up","rush","accelerate"]},
+  {word:"indifferent",pos:"adjective",pron:"/ɪnˈdɪf.ər.ənt/",def:"Having no particular interest or concern; not caring.",ex:"He seemed indifferent to the criticism, which surprised everyone.",syn:["unconcerned","apathetic","neutral","detached"]},
+  {word:"justify",pos:"verb",pron:"/ˈdʒʌs.tɪ.faɪ/",def:"To demonstrate that something is right or reasonable.",ex:"The investment in training was justified by the improved performance.",syn:["warrant","support","validate","defend"]},
+  {word:"kindle",pos:"verb",pron:"/ˈkɪn.dəl/",def:"To arouse or inspire; to start something.",ex:"Her teacher kindled a love of storytelling in her early on.",syn:["ignite","inspire","arouse","awaken"]},
+  {word:"lament",pos:"noun",pron:"/ləˈment/",def:"An expression of grief or sorrow.",ex:"The poem reads as a lament for a lost era.",syn:["mourning","grief","sorrow","expression of sadness"]},
+  {word:"meticulous",pos:"noun",pron:"/məˈtɪk.jʊ.ləs/",def:"Carefully attentive to detail.",ex:"Her meticulousness in proofreading made her an invaluable editor.",syn:["thoroughness","care","precision","exactness"]},
+  {word:"nostalgic",pos:"adjective",pron:"/nɒˈstæl.dʒɪk/",def:"Feeling a sentimental longing for the past.",ex:"Old photos made her feel nostalgic for her childhood home.",syn:["sentimental","wistful","reminiscent","homesick"]},
+  {word:"outspoken",pos:"adjective",pron:"/ˌaʊtˈspəʊ.kən/",def:"Saying exactly what you think even if others disagree.",ex:"She was outspoken about her views on language education reform.",syn:["direct","frank","candid","vocal"]},
+  {word:"perseverance",pos:"noun",pron:"/ˌpɜː.sɪˈvɪər.əns/",def:"Continued effort in doing something despite difficulty.",ex:"Perseverance, not talent, is what separates fluent speakers from beginners.",syn:["determination","persistence","tenacity","dedication"]},
+  {word:"quell",pos:"verb",pron:"/kwel/",def:"To put an end to; to reduce the intensity of.",ex:"She took deep breaths to quell her nerves before the presentation.",syn:["calm","suppress","ease","reduce"]},
+  {word:"reticent",pos:"adjective",pron:"/ˈret.ɪ.sənt/",def:"Not willing to talk about feelings or personal matters.",ex:"He was reticent about his past, rarely sharing personal details.",syn:["reserved","quiet","shy","withdrawn"]},
+  {word:"sagacious",pos:"adjective",pron:"/səˈɡeɪ.ʃəs/",def:"Having or showing good judgment; wise.",ex:"The sagacious mentor gave advice that proved correct years later.",syn:["wise","shrewd","perceptive","intelligent"]},
+  {word:"tenacity",pos:"noun",pron:"/tɪˈnæs.ɪ.ti/",def:"The quality of being very determined; persistence.",ex:"It was her tenacity, more than her talent, that made her successful.",syn:["determination","persistence","resolve","grit"]},
+  {word:"ulterior",pos:"adjective",pron:"/ʌlˈtɪər.i.ər/",def:"Hidden behind what is stated; having a hidden motive.",ex:"She suspected he had an ulterior motive for being so helpful.",syn:["hidden","secret","underlying","undisclosed"]},
+  {word:"venerate",pos:"verb",pron:"/ˈven.ər.eɪt/",def:"To regard with great respect and reverence.",ex:"In many cultures, elders are venerated for their knowledge and experience.",syn:["respect","honor","revere","admire"]},
+  {word:"wholeheartedly",pos:"adverb",pron:"/ˌhəʊlˈhɑːt.ɪd.li/",def:"With complete sincerity and commitment.",ex:"She wholeheartedly agreed with the decision to move to a new city.",syn:["completely","fully","sincerely","totally"]},
+  {word:"exasperate",pos:"verb",pron:"/ɪɡˈzæs.pər.eɪt/",def:"To irritate intensely; to frustrate greatly.",ex:"Repetitive mistakes can exasperate even the most patient teacher.",syn:["frustrate","annoy","irritate","anger"]},
+  {word:"ferret",pos:"verb",pron:"/ˈfer.ɪt/",def:"To search persistently for something hidden.",ex:"She ferreted out the information through months of careful research.",syn:["search","uncover","dig out","track down"]},
+  {word:"grapple",pos:"verb",pron:"/ˈɡræp.əl/",def:"To struggle to deal with or understand something.",ex:"Many learners grapple with the difference between 'affect' and 'effect'.",syn:["struggle","wrestle","deal with","tackle"]},
+  {word:"hover",pos:"verb",pron:"/ˈhɒv.ər/",def:"To remain in one place in the air; to stay near something.",ex:"She hovered near the conversation, not sure whether to join in.",syn:["float","linger","wait","hang around"]},
+  {word:"invoke",pos:"verb",pron:"/ɪnˈvəʊk/",def:"To call on something for support; to mention as a reason.",ex:"He invoked his right to privacy when asked about the incident.",syn:["call on","cite","appeal to","use"]},
+  {word:"jolt",pos:"verb",pron:"/dʒəʊlt/",def:"To shock or surprise someone into action.",ex:"The news jolted her into finally making the decision she had avoided.",syn:["shock","startle","jerk","shake"]},
+  {word:"kindle",pos:"noun",pron:"/ˈkɪn.dəl/",def:"Material used to start a fire; something that starts enthusiasm.",ex:"His encouraging words were the kindle that started her passion for writing.",syn:["spark","trigger","ignition","start"]},
+  {word:"latent",pos:"adjective",pron:"/ˈleɪ.tənt/",def:"Hidden but capable of emerging; not yet visible.",ex:"She had latent leadership qualities that emerged over time.",syn:["hidden","dormant","potential","undeveloped"]},
+  {word:"mimic",pos:"verb",pron:"/ˈmɪm.ɪk/",def:"To copy or imitate closely.",ex:"Children often mimic the speech patterns of those around them.",syn:["imitate","copy","replicate","mirror"]},
+  {word:"novel",pos:"adjective",pron:"/ˈnɒv.əl/",def:"New and original; not seen before.",ex:"She came up with a novel approach to solving the language barrier.",syn:["new","original","fresh","innovative"]},
+  {word:"overt",pos:"adjective",pron:"/ˌəʊˈvɜːt/",def:"Done openly; not hidden.",ex:"His overt enthusiasm made it clear he was excited about the project.",syn:["open","obvious","visible","plain"]},
+  {word:"penchant",pos:"noun",pron:"/ˈpen.tʃənt/",def:"A strong liking for something.",ex:"She had a penchant for picking up slang from movies and TV shows.",syn:["liking","fondness","preference","taste"]},
+  {word:"ramble",pos:"verb",pron:"/ˈræm.bəl/",def:"To talk at length in a confused or unfocused way.",ex:"He had a habit of rambling when he was nervous.",syn:["wander","go on","talk loosely","digress"]},
+  {word:"solitude",pos:"noun",pron:"/ˈsɒl.ɪ.tjuːd/",def:"The state of being alone, especially when peaceful.",ex:"She valued her daily hour of solitude to read and reflect.",syn:["aloneness","privacy","quiet","isolation"]},
+  {word:"tact",pos:"noun",pron:"/tækt/",def:"The ability to say the right thing in a delicate situation.",ex:"It takes real tact to give criticism without hurting someone's feelings.",syn:["sensitivity","diplomacy","care","consideration"]},
+  {word:"undermine",pos:"noun",pron:"/ˌʌn.dəˈmaɪn/",def:"A gradual weakening or destruction of something.",ex:"The constant undermining of her ideas damaged her confidence.",syn:["weakening","erosion","damage","subversion"]},
+  {word:"veracious",pos:"adjective",pron:"/vəˈreɪ.ʃəs/",def:"Truthful; habitually telling the truth.",ex:"She was known to be veracious even when the truth was uncomfortable.",syn:["truthful","honest","accurate","trustworthy"]},
+  {word:"wary",pos:"adjective",pron:"/ˈweər.i/",def:"Cautious about possible dangers or problems.",ex:"He was wary of making promises he might not be able to keep.",syn:["careful","cautious","guarded","alert"]},
+  {word:"exemplify",pos:"noun",pron:"/ɪɡˈzem.plɪ.faɪ/",def:"To be a perfect example of something.",ex:"Her story exemplifies the power of persistence and hard work.",syn:["illustrate","demonstrate","represent","embody"]},
+  {word:"affable",pos:"adjective",pron:"/ˈæf.ə.bəl/",def:"Friendly, good-natured, and easy to talk to.",ex:"Her affable nature put nervous newcomers immediately at ease.",syn:["friendly","pleasant","warm","approachable"]},
+  {word:"brevity",pos:"adjective",pron:"/ˈbrev.ɪ.ti/",def:"Expressing things in a brief and effective way.",ex:"She admired the brevity of his writing — every word counted.",syn:["conciseness","shortness","succinctness","economy"]},
+  {word:"clamor",pos:"noun",pron:"/ˈklæm.ər/",def:"A loud, confused noise; a strong demand for something.",ex:"There was a clamor of voices all trying to speak at once.",syn:["noise","uproar","outcry","demand"]},
+  {word:"deference",pos:"noun",pron:"/ˈdef.ər.əns/",def:"Respectful submission to another's opinion.",ex:"He showed deference to his teacher by listening without interrupting.",syn:["respect","submission","compliance","regard"]},
+  {word:"elucidate",pos:"verb",pron:"/ɪˈluː.sɪ.deɪt/",def:"To make something clear by explaining it.",ex:"Can you elucidate what you mean by 'subtle difference'?",syn:["explain","clarify","illuminate","spell out"]},
+  {word:"forego",pos:"verb",pron:"/fɔːˈɡəʊ/",def:"To give up or go without something willingly.",ex:"She chose to forego social media to focus on her studies.",syn:["sacrifice","give up","relinquish","abandon"]},
+  {word:"grudging",pos:"adjective",pron:"/ˈɡrʌdʒ.ɪŋ/",def:"Given or felt reluctantly or without enthusiasm.",ex:"He gave a grudging compliment when he saw how much she had improved.",syn:["reluctant","unwilling","resentful","half-hearted"]},
+  {word:"harangue",pos:"verb",pron:"/həˈræŋ/",def:"To lecture or scold at length and angrily.",ex:"She harangued the students about the importance of reviewing their notes.",syn:["lecture","scold","rant","berate"]},
+  {word:"incongruent",pos:"adjective",pron:"/ɪnˈkɒŋ.ɡru.ənt/",def:"Not in harmony; not fitting together.",ex:"Her cheerful voice felt incongruent with the sad news she was sharing.",syn:["inconsistent","mismatched","out of place","incompatible"]},
+  {word:"jubilant",pos:"adjective",pron:"/ˈdʒuː.bɪ.lənt/",def:"Feeling or expressing great happiness.",ex:"The team was jubilant after winning the championship.",syn:["overjoyed","elated","ecstatic","thrilled"]},
+  {word:"luminous",pos:"adjective",pron:"/ˈluː.mɪ.nəs/",def:"Bright and shining; full of light or intelligence.",ex:"She had a luminous smile that made everyone around her feel warm.",syn:["bright","glowing","radiant","shining"]},
+  {word:"meritorious",pos:"adjective",pron:"/ˌmer.ɪˈtɔː.ri.əs/",def:"Deserving praise or reward.",ex:"Her meritorious work earned her a scholarship to study abroad.",syn:["praiseworthy","commendable","excellent","worthy"]},
+  {word:"nimble",pos:"adjective",pron:"/ˈnɪm.bəl/",def:"Quick and light in movement or thought.",ex:"She had a nimble mind that picked up new concepts very quickly.",syn:["quick","agile","sharp","clever"]},
+  {word:"ostensible",pos:"adjective",pron:"/ɒˈsten.sɪ.bəl/",def:"Appearing to be true, but possibly hiding a different reality.",ex:"The ostensible reason for the meeting was productivity, but morale was the real issue.",syn:["apparent","seeming","supposed","outward"]},
+  {word:"pragmatism",pos:"noun",pron:"/ˈpræɡ.mə.tɪ.zəm/",def:"A practical approach to problems and situations.",ex:"Her pragmatism helped the team find a workable solution quickly.",syn:["practicality","realism","common sense","sensibility"]},
+  {word:"relinquish",pos:"verb",pron:"/rɪˈlɪŋ.kwɪʃ/",def:"To willingly give up something.",ex:"She had to relinquish control of the project when she moved abroad.",syn:["give up","let go","surrender","release"]},
+  {word:"stigma",pos:"noun",pron:"/ˈstɪɡ.mə/",def:"A mark of disgrace or strong disapproval associated with something.",ex:"There is still a stigma around asking for help with mental health.",syn:["shame","dishonor","brand","mark"]},
+  {word:"tacit",pos:"adjective",pron:"/ˈtæs.ɪt/",def:"Understood or implied without being directly stated.",ex:"There was a tacit agreement among the team not to discuss salaries.",syn:["implied","unspoken","silent","understood"]},
+  {word:"unequivocal",pos:"adjective",pron:"/ˌʌn.ɪˈkwɪv.ə.kəl/",def:"Leaving no room for doubt; completely clear.",ex:"Her unequivocal support for the initiative was a turning point.",syn:["clear","definite","absolute","unmistakable"]},
+  {word:"vindicate",pos:"verb",pron:"/ˈvɪn.dɪ.keɪt/",def:"To clear someone of blame; to prove someone was right.",ex:"The investigation ultimately vindicated her decision to speak out.",syn:["clear","prove right","justify","exonerate"]},
+  {word:"wither",pos:"verb",pron:"/ˈwɪð.ər/",def:"To become dry and shrunken; to lose energy.",ex:"Confidence can wither quickly without encouragement and support.",syn:["shrink","fade","decline","deteriorate"]},
+  {word:"exemplify",pos:"verb",pron:"/ɪɡˈzem.plɪ.faɪ/",def:"To serve as a typical example of something.",ex:"This essay exemplifies exactly the kind of critical thinking we're looking for.",syn:["illustrate","show","represent","demonstrate"]},
+  {word:"acumen",pos:"noun",pron:"/ˈæk.jʊ.mən/",def:"The ability to make good judgments quickly.",ex:"Her business acumen helped the startup turn a profit in its first year.",syn:["insight","sharpness","judgment","shrewdness"]},
+  {word:"bigotry",pos:"noun",pron:"/ˈbɪɡ.ə.tri/",def:"Intolerance toward those with different opinions or beliefs.",ex:"She had no patience for bigotry in any form.",syn:["prejudice","intolerance","narrow-mindedness","discrimination"]},
+  {word:"conciliatory",pos:"adjective",pron:"/kənˈsɪl.i.ə.tər.i/",def:"Intended to make peace or reduce conflict.",ex:"He took a conciliatory tone to smooth over the disagreement.",syn:["peaceable","friendly","soothing","diplomatic"]},
+  {word:"diffuse",pos:"verb",pron:"/dɪˈfjuːz/",def:"To spread over a wide area; to reduce tension.",ex:"She worked to diffuse the tension in the room with a light joke.",syn:["spread","scatter","ease","soften"]},
+  {word:"erudite",pos:"adjective",pron:"/ˈer.ʊ.daɪt/",def:"Having or showing great knowledge.",ex:"Her erudite writing style impressed even experienced academics.",syn:["learned","educated","scholarly","knowledgeable"]},
+  {word:"fathom",pos:"verb",pron:"/ˈfæð.əm/",def:"To understand something after thinking carefully.",ex:"She couldn't fathom why someone would give up such a great opportunity.",syn:["understand","comprehend","grasp","figure out"]},
+  {word:"gravity",pos:"noun",pron:"/ˈɡræv.ɪ.ti/",def:"The seriousness of a situation; physical pull force.",ex:"The gravity of the situation only became clear much later.",syn:["seriousness","importance","weight","severity"]},
+  {word:"heresy",pos:"noun",pron:"/ˈher.ɪ.si/",def:"An opinion that strongly disagrees with what is officially accepted.",ex:"Suggesting the company restructure was seen as heresy by the founders.",syn:["dissent","rebellion","nonconformity","blasphemy"]},
+  {word:"imbue",pos:"verb",pron:"/ɪmˈbjuː/",def:"To fill something or someone with a quality.",ex:"Her writing is imbued with warmth and a deep love of storytelling.",syn:["fill","inspire","permeate","infuse"]},
+  {word:"juncture",pos:"noun",pron:"/ˈdʒʌŋk.tʃər/",def:"A particular point in time, especially one that is important.",ex:"At this juncture, it's important to make the right decision for the future.",syn:["moment","point","stage","time"]},
+  {word:"lax",pos:"adjective",pron:"/læks/",def:"Not strict or tight enough; careless.",ex:"Being lax about pronunciation practice can slow your fluency.",syn:["careless","loose","slack","lenient"]},
+  {word:"marginal",pos:"adjective",pron:"/ˈmɑː.dʒɪ.nəl/",def:"Small and not very important; at the edge.",ex:"The improvement was marginal — not worth celebrating yet.",syn:["minor","slight","small","negligible"]},
+  {word:"nomadic",pos:"adjective",pron:"/nəʊˈmæd.ɪk/",def:"Moving from place to place without a permanent home.",ex:"Her nomadic childhood helped her adapt quickly to new environments.",syn:["wandering","traveling","roaming","unsettled"]},
+  {word:"onus",pos:"noun",pron:"/ˈəʊ.nəs/",def:"A burden or responsibility.",ex:"The onus is on the student to review vocabulary every day.",syn:["responsibility","duty","burden","obligation"]},
+  {word:"parity",pos:"noun",pron:"/ˈpær.ɪ.ti/",def:"The state of being equal.",ex:"There is still no parity in pay between men and women in many fields.",syn:["equality","equivalence","balance","sameness"]},
+  {word:"quagmire",pos:"noun",pron:"/ˈkwæɡ.maɪər/",def:"A complicated or difficult situation; swampy ground.",ex:"The project turned into a quagmire of conflicting requirements.",syn:["mess","muddle","difficulty","bog"]},
+  {word:"rigidity",pos:"noun",pron:"/rɪˈdʒɪd.ɪ.ti/",def:"The quality of being stiff; unwillingness to change.",ex:"Too much rigidity in language learning can prevent natural progress.",syn:["stiffness","inflexibility","firmness","strictness"]},
+  {word:"solace",pos:"noun",pron:"/ˈsɒl.ɪs/",def:"Comfort in a time of distress or sadness.",ex:"She found solace in music during the most difficult periods of her life.",syn:["comfort","consolation","relief","support"]},
+  {word:"treacherous",pos:"adjective",pron:"/ˈtretʃ.ər.əs/",def:"Guilty of betrayal; dangerous due to hidden hazards.",ex:"The mountain road was treacherous in the winter snow.",syn:["dangerous","hazardous","dishonest","unreliable"]},
+  {word:"utter",pos:"adjective",pron:"/ˈʌt.ər/",def:"Complete; absolute (used for emphasis).",ex:"His first attempt at cooking was an utter disaster — but very funny.",syn:["complete","total","absolute","sheer"]},
+  {word:"verbatim",pos:"adverb",pron:"/vɜːˈbeɪ.tɪm/",def:"Exactly word for word.",ex:"She didn't need to memorize speeches verbatim — just the main ideas.",syn:["word-for-word","exactly","literally","precisely"]},
+  {word:"wield",pos:"noun",pron:"/wiːld/",def:"The act of using power or a tool effectively.",ex:"Her wield of language in negotiations impressed everyone at the table.",syn:["use","exercise","control","command"]},
+  {word:"exalt",pos:"verb",pron:"/ɪɡˈzɔːlt/",def:"To hold in very high regard; to raise in status.",ex:"Her family exalted education above everything else.",syn:["praise","elevate","glorify","honor"]},
+  {word:"furtive",pos:"adjective",pron:"/ˈfɜː.tɪv/",def:"Done secretly, trying not to be noticed.",ex:"He gave a furtive glance toward the door to check if anyone was listening.",syn:["secretive","sneaky","hidden","covert"]},
+  {word:"garrulous",pos:"adjective",pron:"/ˈɡær.ʊ.ləs/",def:"Excessively talkative, especially about trivial things.",ex:"His garrulous nature made one-minute conversations into thirty-minute ones.",syn:["talkative","chatty","verbose","long-winded"]},
+  {word:"hackneyed",pos:"adjective",pron:"/ˈhæk.niːd/",def:"Overused and lacking originality; clichéd.",ex:"Try to avoid hackneyed phrases in your writing and find fresh expressions.",syn:["clichéd","overused","stale","tired"]},
+  {word:"impetuous",pos:"adjective",pron:"/ɪmˈpetʃ.u.əs/",def:"Acting quickly and without thought; impulsive.",ex:"His impetuous decision to quit without a backup plan surprised everyone.",syn:["impulsive","hasty","rash","spontaneous"]},
+  {word:"jostle",pos:"verb",pron:"/ˈdʒɒs.əl/",def:"To push and bump against others; to compete.",ex:"Hundreds of ideas jostled for attention in her busy mind.",syn:["push","shove","compete","crowd"]},
+  {word:"kindle",pos:"adjective",pron:"/ˈkɪn.dəl/",def:"Relating to the starting of enthusiasm or fire.",ex:"A kindle moment for her was the first time she understood a joke in English.",syn:["inspiring","igniting","motivating","sparking"]},
+  {word:"listless",pos:"adjective",pron:"/ˈlɪst.ləs/",def:"Lacking energy or enthusiasm; sluggish.",ex:"She felt listless and unable to concentrate after a poor night's sleep.",syn:["lethargic","sluggish","tired","apathetic"]},
+  {word:"malevolent",pos:"adjective",pron:"/məˈlev.ə.lənt/",def:"Having or showing a desire to harm others.",ex:"The villain's malevolent gaze made the audience uncomfortable.",syn:["evil","spiteful","malicious","cruel"]},
+  {word:"negate",pos:"verb",pron:"/nɪˈɡeɪt/",def:"To make something ineffective; to deny the existence of.",ex:"Staying up too late can negate all the benefits of regular exercise.",syn:["cancel out","nullify","deny","undermine"]},
+  {word:"ostracize",pos:"verb",pron:"/ˈɒs.trə.saɪz/",def:"To exclude someone from a social group.",ex:"No one should be ostracized for speaking with an accent.",syn:["exclude","shun","isolate","reject"]},
+  {word:"pedantic",pos:"adjective",pron:"/pɪˈdæn.tɪk/",def:"Overly concerned with minor details or rules.",ex:"Don't be so pedantic — the meaning was clear even with the small error.",syn:["fussy","nitpicking","precise","academic"]},
+  {word:"qualm",pos:"noun",pron:"/kwɑːm/",def:"A feeling of doubt or worry about whether something is right.",ex:"She had qualms about quitting before finding another job.",syn:["doubt","worry","hesitation","scruple"]},
+  {word:"rancor",pos:"noun",pron:"/ˈræŋ.kər/",def:"Bitter resentment or ill will.",ex:"He left the argument without rancor, simply agreeing to disagree.",syn:["bitterness","resentment","hostility","animosity"]},
+  {word:"sanguine",pos:"adjective",pron:"/ˈsæŋ.ɡwɪn/",def:"Optimistic, especially in a difficult situation.",ex:"Despite the setbacks, she remained sanguine about the project's success.",syn:["optimistic","positive","hopeful","confident"]},
+  {word:"trepidation",pos:"noun",pron:"/ˌtrep.ɪˈdeɪ.ʃən/",def:"A feeling of fear or anxiety about something uncertain.",ex:"She approached her first public speech with great trepidation.",syn:["anxiety","fear","nervousness","apprehension"]},
+  {word:"usurp",pos:"verb",pron:"/juːˈzɜːp/",def:"To take power or a position wrongfully.",ex:"She feared that new technology would usurp the role of human writers.",syn:["seize","take over","overthrow","claim"]},
+  {word:"visceral",pos:"adjective",pron:"/ˈvɪs.ər.əl/",def:"Based on deep emotions rather than reason.",ex:"Her reaction to the news was visceral and immediate — she burst into tears.",syn:["emotional","gut-level","instinctive","raw"]},
+  {word:"wanton",pos:"adjective",pron:"/ˈwɒn.tən/",def:"Deliberate and unprovoked; having no restraint.",ex:"The wanton destruction of property shocked the community.",syn:["needless","deliberate","reckless","careless"]},
+  {word:"exemplary",pos:"noun",pron:"/ɪɡˈzem.plər.i/",def:"The quality of being an outstanding model to follow.",ex:"Her exemplary commitment inspired others on the team to work harder.",syn:["model conduct","ideal behavior","excellence","standard-setting"]},
+  {word:"antipathy",pos:"noun",pron:"/ænˈtɪp.ə.θi/",def:"A strong feeling of dislike.",ex:"She had a deep antipathy toward anything that felt dishonest.",syn:["dislike","hostility","aversion","opposition"]},
+  {word:"beguile",pos:"verb",pron:"/bɪˈɡaɪl/",def:"To charm or fascinate, sometimes in a deceptive way.",ex:"The story beguiled readers from the very first sentence.",syn:["charm","enchant","captivate","deceive"]},
+  {word:"condescend",pos:"verb",pron:"/ˌkɒn.dɪˈsend/",def:"To act as if you are better than others.",ex:"She hated when native speakers condescended to her over minor errors.",syn:["patronize","talk down to","belittle","demean"]},
+  {word:"defunct",pos:"adjective",pron:"/dɪˈfʌŋkt/",def:"No longer in existence or functioning.",ex:"The company became defunct after years of poor financial decisions.",syn:["dead","gone","closed","extinct"]},
+  {word:"effusive",pos:"adjective",pron:"/ɪˈfjuː.sɪv/",def:"Expressing feelings in a very enthusiastic way.",ex:"She gave him such effusive praise that he didn't know what to say.",syn:["enthusiastic","gushing","lavish","over-the-top"]},
+  {word:"frugality",pos:"noun",pron:"/fruːˈɡæl.ɪ.ti/",def:"The quality of being careful with money and resources.",ex:"Frugality during her student years helped her save for her first home.",syn:["thrift","economy","carefulness","restraint"]},
+  {word:"guile",pos:"noun",pron:"/ɡaɪl/",def:"Cleverness that is used to trick people.",ex:"He used guile rather than force to get what he wanted.",syn:["cunning","trickery","deception","craftiness"]},
+  {word:"hiatus",pos:"noun",pron:"/haɪˈeɪ.təs/",def:"A pause or break in continuity.",ex:"After a two-year hiatus, she returned to studying with renewed motivation.",syn:["break","pause","gap","interruption"]},
+  {word:"innocuous",pos:"adjective",pron:"/ɪˈnɒk.ju.əs/",def:"Not harmful or offensive; harmless.",ex:"The comment seemed innocuous, but it hurt her feelings deeply.",syn:["harmless","inoffensive","safe","bland"]},
+  {word:"jettison",pos:"verb",pron:"/ˈdʒet.ɪ.sən/",def:"To throw away or abandon something unnecessary.",ex:"She decided to jettison old habits that were holding her back.",syn:["abandon","discard","drop","throw out"]},
+  {word:"keen",pos:"noun",pron:"/kiːn/",def:"The quality of being sharp or enthusiastic.",ex:"His keen for learning made him one of the fastest progressing students.",syn:["sharpness","eagerness","enthusiasm","acuity"]},
+  {word:"laudable",pos:"adjective",pron:"/ˈlɔː.də.bəl/",def:"Deserving praise and commendation.",ex:"Her commitment to daily practice was truly laudable.",syn:["praiseworthy","admirable","commendable","worthy"]},
+  {word:"misgiving",pos:"noun",pron:"/mɪsˈɡɪv.ɪŋ/",def:"A feeling of doubt or worry about something.",ex:"She had serious misgivings about accepting the job offer.",syn:["doubt","worry","reservation","concern"]},
+  {word:"niche",pos:"noun",pron:"/niːʃ/",def:"A small specific area or role that is particularly suitable.",ex:"She found her niche in teaching English to adult immigrants.",syn:["specialty","area","role","slot"]},
+  {word:"obsolete",pos:"adjective",pron:"/ˌɒb.səˈliːt/",def:"No longer in use; out of date.",ex:"Some grammar rules that used to be strict are now considered obsolete.",syn:["outdated","old-fashioned","out of date","superseded"]},
+  {word:"paramount",pos:"adjective",pron:"/ˈpær.ə.maʊnt/",def:"More important than anything else.",ex:"For language learners, daily practice is of paramount importance.",syn:["most important","supreme","key","essential"]},
+  {word:"rebuttal",pos:"noun",pron:"/rɪˈbʌt.əl/",def:"A response that proves another argument is wrong.",ex:"She prepared a clear rebuttal to each of his criticisms.",syn:["counterargument","response","refutation","reply"]},
+  {word:"salient",pos:"adjective",pron:"/ˈseɪ.li.ənt/",def:"Most noticeable or important; prominent.",ex:"The salient point in her argument was easy to miss if you weren't paying attention.",syn:["key","main","prominent","striking"]},
+  {word:"tirade",pos:"noun",pron:"/taɪˈreɪd/",def:"A long, angry speech.",ex:"He launched into a tirade about the unfairness of the grading system.",syn:["rant","outburst","harangue","lecture"]},
+  {word:"unwitting",pos:"adjective",pron:"/ʌnˈwɪt.ɪŋ/",def:"Not aware of what you are doing or its effects.",ex:"She became an unwitting source of misinformation when she shared the wrong article.",syn:["unaware","accidental","unknowing","unintentional"]},
+  {word:"vapid",pos:"adjective",pron:"/ˈvæp.ɪd/",def:"Lacking thought or interest; flat and dull.",ex:"The conversation felt vapid — full of noise but nothing meaningful.",syn:["dull","flat","boring","empty"]},
+  {word:"wistfulness",pos:"noun",pron:"/ˈwɪst.fəl.nəs/",def:"A gentle sadness with longing for the past.",ex:"A sense of wistfulness came over her as she packed her things to leave.",syn:["nostalgia","longing","sentimentality","regret"]},
+  {word:"exonerate",pos:"verb",pron:"/ɪɡˈzɒn.ər.eɪt/",def:"To officially clear someone from blame or wrongdoing.",ex:"The investigation exonerated her from all accusations.",syn:["clear","acquit","free","vindicate"]},
+  {word:"frugal",pos:"noun",pron:"/ˈfruː.ɡəl/",def:"The practice of being sparing and economical.",ex:"Her frugal habits meant she always had savings for unexpected events.",syn:["economy","thriftiness","carefulness","simplicity"]},
+  {word:"grievance",pos:"noun",pron:"/ˈɡriː.vəns/",def:"A real or imagined cause for complaint.",ex:"She addressed her grievance with HR in a calm and professional manner.",syn:["complaint","objection","problem","issue"]},
+  {word:"haughty",pos:"adjective",pron:"/ˈhɔː.ti/",def:"Arrogantly superior and disdainful.",ex:"His haughty attitude alienated everyone in the meeting.",syn:["arrogant","proud","superior","snobbish"]},
+  {word:"insinuate",pos:"verb",pron:"/ɪnˈsɪn.ju.eɪt/",def:"To suggest something unpleasant without saying it directly.",ex:"She didn't accuse him directly but insinuated he had been dishonest.",syn:["imply","hint","suggest","allude"]},
+  {word:"jest",pos:"noun",pron:"/dʒest/",def:"A thing said or done for amusement; a joke.",ex:"He said it in jest, but she took it seriously and felt offended.",syn:["joke","humor","fun","banter"]},
+  {word:"lackluster",pos:"adjective",pron:"/ˈlæk.lʌs.tər/",def:"Lacking energy, excitement, or quality.",ex:"The team delivered a lackluster performance in the first half.",syn:["dull","flat","mediocre","uninspired"]},
+  {word:"mollify",pos:"verb",pron:"/ˈmɒl.ɪ.faɪ/",def:"To make someone less angry or upset.",ex:"A sincere apology helped mollify the frustrated customer.",syn:["calm","soothe","appease","pacify"]},
+  {word:"nefarious",pos:"adjective",pron:"/nɪˈfeər.i.əs/",def:"Wicked or criminal; extremely evil.",ex:"The scheme was nefarious and designed to exploit vulnerable people.",syn:["evil","wicked","criminal","sinister"]},
+  {word:"opulent",pos:"adjective",pron:"/ˈɒp.jʊ.lənt/",def:"Ostentatiously rich and luxurious.",ex:"The hotel was opulent — marble floors, silk curtains, and golden fixtures.",syn:["luxurious","lavish","wealthy","grand"]},
+  {word:"pensive",pos:"adjective",pron:"/ˈpen.sɪv/",def:"Engaged in deep or serious thought.",ex:"She sat pensive by the window, lost in thought about what to do next.",syn:["thoughtful","reflective","contemplative","serious"]},
+  {word:"quench",pos:"noun",pron:"/kwentʃ/",def:"The act of satisfying a strong need or desire.",ex:"Her quench for knowledge drove her to read every book she could find.",syn:["satisfying","fulfillment","relief","meeting of a need"]},
+  {word:"rescind",pos:"verb",pron:"/rɪˈsɪnd/",def:"To revoke or cancel a law, decision, or order.",ex:"The company rescinded the job offer after discovering the candidate had lied.",syn:["cancel","revoke","withdraw","annul"]},
+  {word:"stagnant",pos:"adjective",pron:"/ˈstæɡ.nənt/",def:"Not flowing or changing; showing no activity or progress.",ex:"Her vocabulary felt stagnant because she only spoke in comfortable situations.",syn:["still","inactive","stuck","motionless"]},
+  {word:"tumultuous",pos:"adjective",pron:"/tjuːˈmʌl.tju.əs/",def:"Full of noise, confusion, or disorder.",ex:"She navigated a tumultuous first year in a new country with impressive calm.",syn:["chaotic","turbulent","noisy","stormy"]},
+  {word:"unfounded",pos:"adjective",pron:"/ˌʌnˈfaʊn.dɪd/",def:"Not based on fact; having no evidence to support it.",ex:"The rumor turned out to be completely unfounded.",syn:["baseless","groundless","unsupported","false"]},
+  {word:"vociferous",pos:"adjective",pron:"/vəˈsɪf.ər.əs/",def:"Expressing opinions in a loud and forceful way.",ex:"She was a vociferous advocate for language rights in education.",syn:["loud","outspoken","strident","noisy"]},
+  {word:"wax",pos:"verb",pron:"/wæks/",def:"To increase gradually; to speak at length on a subject.",ex:"He waxed poetic about the beauty of multilingualism.",syn:["grow","increase","expand","speak at length"]},
+  {word:"zealotry",pos:"noun",pron:"/ˈzel.ə.tri/",def:"Excessive enthusiasm or devotion to a cause.",ex:"Zealotry in language correction can discourage learners from speaking up.",syn:["fanaticism","extremism","excessive enthusiasm","obsession"]},
+  {word:"abridge",pos:"verb",pron:"/əˈbrɪdʒ/",def:"To shorten a piece of writing while keeping the main content.",ex:"She abridged the 400-page novel into a readable summary for students.",syn:["shorten","condense","summarize","reduce"]},
+  {word:"beckon",pos:"verb",pron:"/ˈbek.ən/",def:"To make a gesture inviting someone to come; to attract.",ex:"New opportunities beckoned as she improved her English skills.",syn:["signal","call","invite","attract"]},
+  {word:"cogent",pos:"adjective",pron:"/ˈkəʊ.dʒənt/",def:"Clear, logical, and convincing.",ex:"She made a cogent argument that won over even the skeptics.",syn:["convincing","logical","compelling","persuasive"]},
+  {word:"dissuade",pos:"verb",pron:"/dɪˈsweɪd/",def:"To persuade someone not to do something.",ex:"Her friends tried to dissuade her from dropping the language class.",syn:["deter","discourage","talk out of","warn off"]},
+  {word:"engross",pos:"verb",pron:"/ɪnˈɡrəʊs/",def:"To absorb someone's full attention.",ex:"She was so engrossed in the novel that she missed her stop.",syn:["absorb","captivate","fascinate","immerse"]},
+  {word:"flounder",pos:"verb",pron:"/ˈflaʊn.dər/",def:"To struggle or be in difficulty; to move clumsily.",ex:"She floundered during her first conversation with a native speaker.",syn:["struggle","stumble","falter","be confused"]},
+  {word:"glean",pos:"noun",pron:"/ɡliːn/",def:"A small amount gathered gradually from different places.",ex:"Each podcast gave her a glean of new vocabulary she could use.",syn:["bit","fragment","insight","piece"]},
+  {word:"hamper",pos:"verb",pron:"/ˈhæm.pər/",def:"To slow down or prevent progress.",ex:"Shyness can hamper your ability to practice speaking in real life.",syn:["hinder","obstruct","impede","slow"]},
+  {word:"ingenuity",pos:"noun",pron:"/ˌɪn.dʒɪˈnjuː.ɪ.ti/",def:"The ability to solve problems cleverly.",ex:"The ingenuity of her memory tricks helped her retain hundreds of words.",syn:["cleverness","creativity","inventiveness","resourcefulness"]},
+  {word:"judicious",pos:"noun",pron:"/dʒuːˈdɪʃ.əs/",def:"The quality of showing good judgment.",ex:"Her judicious use of formal and informal language impressed her colleagues.",syn:["wisdom","good judgment","sound sense","discernment"]},
+  {word:"languish",pos:"verb",pron:"/ˈlæŋ.ɡwɪʃ/",def:"To be or become weak; to fail to progress.",ex:"Without regular practice, language skills can languish.",syn:["weaken","decline","fade","deteriorate"]},
+  {word:"myriad",pos:"adjective",pron:"/ˈmɪr.i.əd/",def:"A countless number of different things.",ex:"There are myriad ways to improve your vocabulary every day.",syn:["countless","many","numerous","endless"]},
+  {word:"nullify",pos:"verb",pron:"/ˈnʌl.ɪ.faɪ/",def:"To make something legally or effectively void.",ex:"One bad habit can nullify weeks of consistent effort.",syn:["cancel out","invalidate","negate","undo"]},
+  {word:"oblivious",pos:"adjective",pron:"/əˈblɪv.i.əs/",def:"Not aware of something; completely unaware.",ex:"She was oblivious to the fact that everyone else had already understood.",syn:["unaware","ignorant","heedless","inattentive"]},
+  {word:"perennial",pos:"adjective",pron:"/pəˈren.i.əl/",def:"Lasting for a long time or recurring repeatedly.",ex:"Finding time for study is a perennial challenge for working adults.",syn:["lasting","ongoing","permanent","recurring"]},
+  {word:"reciprocate",pos:"verb",pron:"/rɪˈsɪp.rə.keɪt/",def:"To respond to an action with a similar one.",ex:"She always tried to reciprocate kindness whenever it was shown to her.",syn:["return","repay","match","respond"]},
+  {word:"stalwart",pos:"adjective",pron:"/ˈstɔːl.wət/",def:"Loyal, reliable, and hardworking.",ex:"She was a stalwart member of the team, always dependable under pressure.",syn:["loyal","dependable","committed","solid"]},
+  {word:"trifling",pos:"adjective",pron:"/ˈtraɪ.flɪŋ/",def:"Unimportant; having little value.",ex:"Don't let trifling distractions take your focus away from your goal.",syn:["trivial","minor","unimportant","petty"]},
+  {word:"umbrage",pos:"noun",pron:"/ˈʌm.brɪdʒ/",def:"A feeling of offense or resentment.",ex:"She took umbrage at the suggestion that her English wasn't good enough.",syn:["offense","resentment","displeasure","irritation"]},
+  {word:"vacuous",pos:"adjective",pron:"/ˈvæk.ju.əs/",def:"Showing a lack of thought or intelligence; empty.",ex:"The conversation felt vacuous — no depth, no substance, just small talk.",syn:["empty","hollow","shallow","meaningless"]},
+  {word:"wane",pos:"adjective",pron:"/weɪn/",def:"Relating to a gradual decline or decrease.",ex:"The wane period of motivation is when most learners give up.",syn:["declining","diminishing","fading","decreasing"]},
+  {word:"abate",pos:"verb",pron:"/əˈbeɪt/",def:"To become less intense or widespread.",ex:"The storm finally abated after several hours of heavy rain.",syn:["reduce","decrease","diminish","subside"]},
+  {word:"abhor",pos:"verb",pron:"/əbˈhɔːr/",def:"To regard with disgust and hatred.",ex:"She abhorred dishonesty in any form.",syn:["detest","hate","loathe","despise"]},
+  {word:"adamant",pos:"adjective",pron:"/ˈæd.ə.mənt/",def:"Refusing to change one mind; absolutely firm.",ex:"She was adamant that she had made the right choice.",syn:["firm","insistent","determined","unyielding"]},
+  {word:"adept",pos:"adjective",pron:"/əˈdept/",def:"Very skilled or proficient at something.",ex:"She became adept at switching between formal and casual English.",syn:["skilled","expert","proficient","capable"]},
+  {word:"adversity",pos:"noun",pron:"/ədˈvɜː.sɪ.ti/",def:"Difficult or unpleasant conditions; misfortune.",ex:"She grew stronger through every adversity she faced.",syn:["hardship","difficulty","misfortune","struggle"]},
+  {word:"affinity",pos:"noun",pron:"/əˈfɪn.ɪ.ti/",def:"A natural liking or attraction to someone or something.",ex:"She felt an immediate affinity with others who had moved to a new country.",syn:["connection","bond","attraction","fondness"]},
+  {word:"agile",pos:"adjective",pron:"/ˈædʒ.aɪl/",def:"Able to move quickly and easily; mentally sharp.",ex:"An agile learner adjusts their strategy when something is not working.",syn:["quick","nimble","flexible","sharp"]},
+  {word:"aloof",pos:"adjective",pron:"/əˈluːf/",def:"Not friendly or forthcoming; keeping a distance.",ex:"She seemed aloof at first but was actually quite warm once you got to know her.",syn:["distant","reserved","detached","cool"]},
+  {word:"ambivalent",pos:"adjective",pron:"/æmˈbɪv.ə.lənt/",def:"Having mixed feelings about something.",ex:"She was ambivalent about moving abroad — excited but also nervous.",syn:["uncertain","undecided","conflicted","torn"]},
+  {word:"amenable",pos:"adjective",pron:"/əˈmiː.nə.bəl/",def:"Open and responsive to suggestion; easy to work with.",ex:"He was amenable to changing the plan if it helped the team.",syn:["agreeable","cooperative","flexible","open"]},
+  {word:"amicable",pos:"adjective",pron:"/ˈæm.ɪ.kə.bəl/",def:"Having a spirit of friendliness without bad feeling.",ex:"They reached an amicable agreement without going to court.",syn:["friendly","peaceful","cordial","harmonious"]},
+  {word:"anecdote",pos:"noun",pron:"/ˈæn.ɪk.dəʊt/",def:"A short amusing or interesting story about a real event.",ex:"She opened her speech with an anecdote that made everyone laugh.",syn:["story","tale","account","episode"]},
+  {word:"animosity",pos:"noun",pron:"/ˌæn.ɪˈmɒs.ɪ.ti/",def:"Strong hostility or dislike.",ex:"There was no animosity between them, just an honest disagreement.",syn:["hostility","resentment","hatred","ill will"]},
+  {word:"anomaly",pos:"noun",pron:"/əˈnɒm.ə.li/",def:"Something that deviates from what is normal.",ex:"Her rapid progress was an anomaly — most learners take much longer.",syn:["irregularity","exception","oddity","deviation"]},
+  {word:"antidote",pos:"noun",pron:"/ˈæn.tɪ.dəʊt/",def:"Something that counteracts an unpleasant feeling or situation.",ex:"Exercise is a great antidote to the stress of a long workday.",syn:["remedy","cure","solution","fix"]},
+  {word:"apathy",pos:"noun",pron:"/ˈæp.ə.θi/",def:"Lack of interest enthusiasm or concern.",ex:"Apathy toward learning is the biggest barrier to progress.",syn:["indifference","disinterest","lethargy","unconcern"]},
+  {word:"apt",pos:"adjective",pron:"/æpt/",def:"Appropriate or suitable in the circumstances.",ex:"It was an apt moment to bring up the topic of vocabulary building.",syn:["appropriate","fitting","suitable","relevant"]},
+  {word:"ardent",pos:"adjective",pron:"/ˈɑː.dənt/",def:"Enthusiastic and passionate.",ex:"She was an ardent reader who finished a book every week.",syn:["passionate","eager","devoted","fervent"]},
+  {word:"arduous",pos:"adjective",pron:"/ˈɑː.dju.əs/",def:"Involving or requiring strenuous effort; difficult.",ex:"The path to fluency is arduous but entirely worth the effort.",syn:["difficult","tough","demanding","hard"]},
+  {word:"ascertain",pos:"verb",pron:"/ˌæs.əˈteɪn/",def:"To find out something for certain.",ex:"She called the office to ascertain whether the position was still available.",syn:["find out","determine","confirm","verify"]},
+  {word:"aspire",pos:"verb",pron:"/əˈspaɪər/",def:"To have a strong desire to achieve something.",ex:"She aspired to speak English as naturally as she spoke her mother tongue.",syn:["aim","hope","strive","wish"]},
+  {word:"astute",pos:"adjective",pron:"/əˈstjuːt/",def:"Having the ability to accurately assess situations; clever.",ex:"Her astute observation caught an error everyone else had missed.",syn:["clever","sharp","perceptive","shrewd"]},
+  {word:"augment",pos:"verb",pron:"/ɔːɡˈment/",def:"To make something larger or more effective by adding to it.",ex:"She used flashcards to augment her daily vocabulary practice.",syn:["increase","expand","enhance","supplement"]},
+  {word:"avert",pos:"verb",pron:"/əˈvɜːt/",def:"To turn away; to prevent something from happening.",ex:"A quick apology helped avert a bigger conflict.",syn:["prevent","avoid","deflect","turn away"]},
+  {word:"avid",pos:"adjective",pron:"/ˈæv.ɪd/",def:"Having an eager desire for something; enthusiastic.",ex:"She was an avid language learner who studied every single day.",syn:["enthusiastic","keen","eager","passionate"]},
+  {word:"baffle",pos:"verb",pron:"/ˈbæf.əl/",def:"To confuse someone completely.",ex:"Idioms and phrasal verbs can baffle even advanced learners.",syn:["confuse","puzzle","perplex","mystify"]},
+  {word:"banish",pos:"verb",pron:"/ˈbæn.ɪʃ/",def:"To send someone away or get rid of something.",ex:"She tried to banish self-doubt every time she spoke English.",syn:["expel","dismiss","remove","drive away"]},
+  {word:"belittle",pos:"verb",pron:"/bɪˈlɪt.əl/",def:"To make someone or something seem less important.",ex:"Never belittle someone for making mistakes while learning a language.",syn:["demean","undermine","dismiss","put down"]},
+  {word:"benign",pos:"adjective",pron:"/bɪˈnaɪn/",def:"Gentle and kind; not harmful.",ex:"His benign smile put the nervous newcomers at ease.",syn:["harmless","kind","gentle","mild"]},
+  {word:"blatant",pos:"adjective",pron:"/ˈbleɪ.tənt/",def:"Done openly and unashamedly; very obvious.",ex:"The blatant contradiction in his argument was impossible to ignore.",syn:["obvious","flagrant","clear","glaring"]},
+  {word:"bolster",pos:"verb",pron:"/ˈbəʊl.stər/",def:"To support or strengthen something.",ex:"Reading every day will bolster your vocabulary over time.",syn:["strengthen","boost","support","reinforce"]},
+  {word:"boon",pos:"noun",pron:"/buːn/",def:"A helpful or welcome gift or advantage.",ex:"Access to the internet has been a great boon for language learners.",syn:["benefit","advantage","gift","blessing"]},
+  {word:"brisk",pos:"adjective",pron:"/brɪsk/",def:"Active and energetic; quick and efficient.",ex:"She kept the meeting brisk by sticking to the agenda.",syn:["quick","lively","energetic","efficient"]},
+  {word:"calamity",pos:"noun",pron:"/kəˈlæm.ɪ.ti/",def:"An event causing great damage or distress.",ex:"Missing the deadline felt like a calamity but the team recovered.",syn:["disaster","catastrophe","crisis","tragedy"]},
+  {word:"callous",pos:"adjective",pron:"/ˈkæl.əs/",def:"Showing no feeling for others; insensitive.",ex:"His callous response to her struggles showed a lack of empathy.",syn:["heartless","cold","insensitive","cruel"]},
+  {word:"candor",pos:"noun",pron:"/ˈkæn.dər/",def:"The quality of being open and honest.",ex:"She appreciated her mentor's candor even when the feedback was tough.",syn:["honesty","openness","frankness","directness"]},
+  {word:"caustic",pos:"adjective",pron:"/ˈkɔː.stɪk/",def:"Sarcastic in a scathing way.",ex:"His caustic humor was funny to some but hurtful to others.",syn:["biting","sharp","sarcastic","harsh"]},
+  {word:"chronic",pos:"adjective",pron:"/ˈkrɒn.ɪk/",def:"Persisting for a long time; constantly recurring.",ex:"Chronic procrastination is one of the biggest obstacles to learning.",syn:["persistent","constant","ongoing","long-term"]},
+  {word:"clandestine",pos:"adjective",pron:"/klænˈdes.tɪn/",def:"Kept secret or done secretively.",ex:"They held clandestine study sessions in the library after hours.",syn:["secret","covert","hidden","underground"]},
+  {word:"collaborate",pos:"verb",pron:"/kəˈlæb.ə.reɪt/",def:"To work jointly with others on a project.",ex:"Language learners often collaborate in conversation groups to practice speaking.",syn:["cooperate","work together","partner","team up"]},
+  {word:"complacent",pos:"adjective",pron:"/kəmˈpleɪ.sənt/",def:"Too satisfied with oneself; uncritically satisfied.",ex:"Do not become complacent just because you can hold a basic conversation.",syn:["self-satisfied","smug","overconfident","careless"]},
+  {word:"concede",pos:"verb",pron:"/kənˈsiːd/",def:"To admit that something is true after first denying it.",ex:"She finally conceded that her study method was not working.",syn:["admit","acknowledge","accept","grant"]},
+  {word:"condone",pos:"verb",pron:"/kənˈdəʊn/",def:"To accept or allow behavior that is considered wrong.",ex:"She would not condone rudeness toward other learners.",syn:["tolerate","excuse","allow","overlook"]},
+  {word:"confound",pos:"verb",pron:"/kənˈfaʊnd/",def:"To surprise and confuse someone; to prove wrong.",ex:"She confounded expectations by passing the exam on her first attempt.",syn:["confuse","surprise","baffle","puzzle"]},
+  {word:"conscientious",pos:"adjective",pron:"/ˌkɒn.ʃiˈen.ʃəs/",def:"Wishing to do what is right; very careful and thorough.",ex:"A conscientious learner reviews what they studied the day before.",syn:["diligent","careful","thorough","responsible"]},
+  {word:"consensus",pos:"noun",pron:"/kənˈsen.səs/",def:"General agreement among a group of people.",ex:"The consensus in the class was that conversation practice was the most valuable activity.",syn:["agreement","accord","unity","harmony"]},
+  {word:"conspicuous",pos:"adjective",pron:"/kənˈspɪk.ju.əs/",def:"Standing out so as to be clearly visible.",ex:"Her accent was conspicuous at first but it faded over time.",syn:["noticeable","visible","obvious","prominent"]},
+  {word:"contempt",pos:"noun",pron:"/kənˈtempt/",def:"The feeling that something deserves no respect.",ex:"She had contempt for any shortcut that bypassed real learning.",syn:["disrespect","scorn","disdain","disregard"]},
+  {word:"contend",pos:"verb",pron:"/kənˈtend/",def:"To struggle or compete; to assert something.",ex:"She had to contend with distractions every time she tried to study.",syn:["compete","struggle","argue","maintain"]},
+  {word:"conviction",pos:"noun",pron:"/kənˈvɪk.ʃən/",def:"A firmly held belief; the feeling of certainty.",ex:"She spoke with conviction that practice every day would bring results.",syn:["belief","certainty","confidence","assurance"]},
+  {word:"copious",pos:"adjective",pron:"/ˈkəʊ.pi.əs/",def:"Abundant in supply; large in quantity.",ex:"She took copious notes during every class she attended.",syn:["abundant","extensive","plentiful","large"]},
+  {word:"corroborate",pos:"verb",pron:"/kəˈrɒb.ə.reɪt/",def:"To confirm or support with evidence.",ex:"The second study corroborated the findings of the first one.",syn:["confirm","verify","support","validate"]},
+  {word:"covet",pos:"verb",pron:"/ˈkʌv.ɪt/",def:"To yearn to possess something belonging to another.",ex:"She coveted the fluency of her bilingual coworkers.",syn:["desire","envy","crave","long for"]},
+  {word:"credible",pos:"adjective",pron:"/ˈkred.ɪ.bəl/",def:"Able to be believed; convincing.",ex:"A credible explanation backed by evidence is always more persuasive.",syn:["believable","trustworthy","convincing","plausible"]},
+  {word:"criterion",pos:"noun",pron:"/kraɪˈtɪər.i.ən/",def:"A standard by which something is judged.",ex:"The main criterion for success was whether she could hold a conversation naturally.",syn:["standard","measure","rule","benchmark"]},
+  {word:"cryptic",pos:"adjective",pron:"/ˈkrɪp.tɪk/",def:"Having a meaning that is mysterious or obscure.",ex:"His cryptic answer left everyone more confused than before.",syn:["mysterious","obscure","puzzling","ambiguous"]},
+  {word:"culminate",pos:"verb",pron:"/ˈkʌl.mɪ.neɪt/",def:"To reach a climax or highest point.",ex:"Years of practice culminated in a confident job interview in English.",syn:["peak","climax","result in","end in"]},
+  {word:"cunning",pos:"adjective",pron:"/ˈkʌn.ɪŋ/",def:"Having or showing skill in achieving goals cleverly.",ex:"She used a cunning study trick — turning vocabulary into short stories.",syn:["clever","shrewd","crafty","resourceful"]},
+  {word:"curtail",pos:"verb",pron:"/kɜːˈteɪl/",def:"To reduce or limit something.",ex:"She had to curtail her screen time to make room for studying.",syn:["reduce","limit","cut back","restrict"]},
+  {word:"dauntless",pos:"adjective",pron:"/ˈdɔːnt.ləs/",def:"Showing fearlessness and determination.",ex:"Her dauntless approach to speaking — mistakes and all — inspired others.",syn:["fearless","brave","bold","courageous"]},
+  {word:"dearth",pos:"noun",pron:"/dɜːθ/",def:"A scarcity or lack of something.",ex:"There is no dearth of resources for English learners today.",syn:["scarcity","lack","shortage","absence"]},
+  {word:"deliberate",pos:"verb",pron:"/dɪˈlɪb.ər.eɪt/",def:"To think about carefully before deciding.",ex:"She deliberated for days before choosing which language program to join.",syn:["consider","think over","weigh","ponder"]},
+  {word:"demeanor",pos:"noun",pron:"/dɪˈmiː.nər/",def:"Outward behavior or bearing.",ex:"Her calm demeanor during the presentation earned her immediate respect.",syn:["manner","behavior","attitude","bearing"]},
+  {word:"denounce",pos:"verb",pron:"/dɪˈnaʊns/",def:"To publicly condemn something or someone.",ex:"She denounced the idea that an accent is a sign of weakness.",syn:["condemn","criticize","attack","oppose"]},
+  {word:"deplete",pos:"verb",pron:"/dɪˈpliːt/",def:"To reduce the amount of something drastically.",ex:"Stress and lack of sleep quickly depleted her concentration.",syn:["exhaust","drain","reduce","use up"]},
+  {word:"derive",pos:"verb",pron:"/dɪˈraɪv/",def:"To obtain something from a source.",ex:"Many English words are derived from Latin and French.",syn:["obtain","draw","get","stem from"]},
+  {word:"despair",pos:"noun",pron:"/dɪˈspeər/",def:"The complete loss of hope.",ex:"She refused to fall into despair despite the slow pace of her progress.",syn:["hopelessness","dejection","misery","gloom"]},
+  {word:"determined",pos:"adjective",pron:"/dɪˈtɜː.mɪnd/",def:"Having firmness of purpose; resolute.",ex:"She was determined to hold a full conversation in English within a year.",syn:["resolute","firm","committed","driven"]},
+  {word:"diligence",pos:"noun",pron:"/ˈdɪl.ɪ.dʒəns/",def:"Careful and persistent effort in doing something.",ex:"Diligence and consistency will always outlast raw talent.",syn:["hardwork","effort","persistence","dedication"]},
+  {word:"discern",pos:"verb",pron:"/dɪˈsɜːn/",def:"To recognize or identify something clearly.",ex:"She began to discern patterns in how English sentences are structured.",syn:["recognize","notice","detect","identify"]},
+  {word:"discourse",pos:"noun",pron:"/ˈdɪs.kɔːs/",def:"Written or spoken communication or debate.",ex:"Learning to navigate everyday discourse is just as important as grammar.",syn:["conversation","discussion","dialogue","communication"]},
+  {word:"disparity",pos:"noun",pron:"/dɪˈspær.ɪ.ti/",def:"A great difference between things.",ex:"The disparity between her reading level and speaking level was striking.",syn:["difference","gap","inequality","imbalance"]},
+  {word:"dissent",pos:"noun",pron:"/dɪˈsent/",def:"Disagreement with an official or widely held view.",ex:"She expressed her dissent calmly and clearly without causing conflict.",syn:["disagreement","opposition","objection","protest"]},
+  {word:"diverge",pos:"verb",pron:"/daɪˈvɜːdʒ/",def:"To develop in a different direction; to differ.",ex:"Their opinions diverged on the best way to learn vocabulary.",syn:["differ","branch off","deviate","separate"]},
+  {word:"dominant",pos:"adjective",pron:"/ˈdɒm.ɪ.nənt/",def:"Having or exerting control; most important.",ex:"English has become the dominant language of international business.",syn:["main","leading","powerful","primary"]},
+  {word:"dormant",pos:"adjective",pron:"/ˈdɔː.mənt/",def:"Temporarily inactive; in a state of rest.",ex:"Her confidence had been dormant for years before it finally emerged.",syn:["inactive","sleeping","latent","quiet"]},
+  {word:"dubious",pos:"adjective",pron:"/ˈdjuː.bi.əs/",def:"Hesitating or doubting; of questionable quality.",ex:"She was dubious about the app's promise of fluency in thirty days.",syn:["doubtful","uncertain","skeptical","suspicious"]},
+  {word:"earnest",pos:"adjective",pron:"/ˈɜː.nɪst/",def:"Sincere and serious in intention.",ex:"Her earnest effort to communicate earned her the respect of her coworkers.",syn:["sincere","serious","genuine","committed"]},
+  {word:"ebullient",pos:"adjective",pron:"/ɪˈbʊl.i.ənt/",def:"Cheerful and full of energy.",ex:"Her ebullient personality made every study group more enjoyable.",syn:["lively","enthusiastic","bubbly","cheerful"]},
+  {word:"edify",pos:"verb",pron:"/ˈed.ɪ.faɪ/",def:"To instruct or improve someone morally or intellectually.",ex:"Great books both entertain and edify the reader.",syn:["educate","enlighten","inform","improve"]},
+  {word:"elusive",pos:"adjective",pron:"/ɪˈluː.sɪv/",def:"Difficult to find catch or achieve.",ex:"Fluency can feel elusive but it gets closer with every conversation.",syn:["hard to catch","slippery","evasive","difficult"]},
+  {word:"eminent",pos:"adjective",pron:"/ˈem.ɪ.nənt/",def:"Famous and respected in a particular field.",ex:"She became an eminent voice on the subject of immigrant education.",syn:["distinguished","renowned","notable","respected"]},
+  {word:"encumber",pos:"verb",pron:"/ɪnˈkʌm.bər/",def:"To restrict or burden someone or something.",ex:"Do not let perfectionism encumber your ability to just speak.",syn:["burden","hinder","weigh down","restrict"]},
+  {word:"ensue",pos:"verb",pron:"/ɪnˈsjuː/",def:"To happen afterward as a result.",ex:"A lively debate ensued after she shared her opinion.",syn:["follow","result","occur","develop"]},
+  {word:"enumerate",pos:"verb",pron:"/ɪˈnjuː.mər.eɪt/",def:"To mention things one by one.",ex:"She enumerated three reasons why daily review was essential.",syn:["list","name","count","specify"]},
+  {word:"envision",pos:"verb",pron:"/ɪnˈvɪʒ.ən/",def:"To imagine as a future possibility.",ex:"She envisioned herself giving a presentation confidently in English.",syn:["imagine","picture","foresee","visualize"]},
+  {word:"equitable",pos:"adjective",pron:"/ˈek.wɪ.tə.bəl/",def:"Fair and impartial.",ex:"An equitable system gives every student equal opportunity to succeed.",syn:["fair","just","impartial","balanced"]},
+  {word:"evade",pos:"verb",pron:"/ɪˈveɪd/",def:"To escape or avoid something by cleverness.",ex:"She tried not to evade difficult conversations just because they were uncomfortable.",syn:["avoid","dodge","escape","sidestep"]},
+  {word:"evoke",pos:"verb",pron:"/ɪˈvəʊk/",def:"To bring a feeling memory or image to mind.",ex:"The smell of that food evoked vivid memories of her childhood home.",syn:["bring to mind","recall","conjure","awaken"]},
+  {word:"exacting",pos:"adjective",pron:"/ɪɡˈzæk.tɪŋ/",def:"Making great demands; requiring great effort.",ex:"Language learning is an exacting process that rewards patience.",syn:["demanding","rigorous","strict","tough"]},
+  {word:"exemplar",pos:"noun",pron:"/ɪɡˈzem.plər/",def:"A person or thing serving as a typical example.",ex:"She was held up as an exemplar of what determination can achieve.",syn:["model","example","ideal","standard"]},
+  {word:"expedient",pos:"adjective",pron:"/ɪkˈspiː.di.ənt/",def:"Convenient and practical though possibly improper.",ex:"It was expedient to use a translation app at first but she eventually stopped relying on it.",syn:["practical","convenient","advisable","useful"]},
+  {word:"explicit",pos:"adjective",pron:"/ɪkˈsplɪs.ɪt/",def:"Stated clearly and in detail; leaving no room for confusion.",ex:"Her explicit instructions helped everyone understand the task perfectly.",syn:["clear","direct","specific","definite"]},
+  {word:"exploit",pos:"verb",pron:"/ɪkˈsplɔɪt/",def:"To use a resource fully and effectively.",ex:"She exploited every opportunity to practice speaking English.",syn:["use","make use of","capitalize on","take advantage of"]},
+  {word:"exquisite",pos:"adjective",pron:"/ɪkˈskwɪz.ɪt/",def:"Extremely beautiful or carefully made.",ex:"Her exquisite attention to pronunciation impressed her teacher.",syn:["beautiful","excellent","refined","delicate"]},
+  {word:"fabricate",pos:"verb",pron:"/ˈfæb.rɪ.keɪt/",def:"To invent in order to deceive; to construct.",ex:"Fabricating excuses for not practicing will only delay your progress.",syn:["invent","make up","create","construct"]},
+  {word:"falter",pos:"verb",pron:"/ˈfɔːl.tər/",def:"To lose strength or momentum; to hesitate.",ex:"Her voice faltered slightly during her first public speech but she kept going.",syn:["hesitate","stumble","waver","fail"]},
+  {word:"familiarity",pos:"noun",pron:"/fəˌmɪl.iˈær.ɪ.ti/",def:"Close knowledge or experience of something.",ex:"Familiarity with common idioms will make you sound much more natural.",syn:["knowledge","acquaintance","experience","understanding"]},
+  {word:"feign",pos:"verb",pron:"/feɪn/",def:"To pretend to have a feeling or quality.",ex:"She feigned confidence at the job interview and it actually worked.",syn:["pretend","fake","simulate","act"]},
+  {word:"fidelity",pos:"noun",pron:"/fɪˈdel.ɪ.ti/",def:"Faithfulness to a person cause or belief.",ex:"She showed fidelity to her learning goals even when motivation was low.",syn:["loyalty","faithfulness","dedication","commitment"]},
+  {word:"flagrant",pos:"adjective",pron:"/ˈfleɪ.ɡrənt/",def:"Conspicuously wrong or bad; openly scandalous.",ex:"It was a flagrant disregard for the rules that surprised everyone.",syn:["obvious","blatant","glaring","outrageous"]},
+  {word:"flaw",pos:"noun",pron:"/flɔː/",def:"A mark fault or imperfection.",ex:"Every learner has flaws in their language — what matters is being aware of them.",syn:["defect","imperfection","weakness","fault"]},
+  {word:"fledgling",pos:"adjective",pron:"/ˈfledʒ.lɪŋ/",def:"New and inexperienced; just starting.",ex:"As a fledgling English speaker she made many mistakes but never gave up.",syn:["new","beginner","emerging","developing"]},
+  {word:"foresight",pos:"noun",pron:"/ˈfɔː.saɪt/",def:"The ability to predict what will happen in the future.",ex:"Her foresight in building her vocabulary early paid off in the long run.",syn:["planning","vision","anticipation","forethought"]},
+  {word:"formidable",pos:"adjective",pron:"/ˈfɔː.mɪ.də.bəl/",def:"Inspiring fear or respect through size or difficulty.",ex:"English grammar can seem formidable at first but it becomes manageable.",syn:["daunting","impressive","powerful","challenging"]},
+  {word:"fortitude",pos:"noun",pron:"/ˈfɔː.tɪ.tjuːd/",def:"Courage in pain or adversity.",ex:"Getting through the first difficult year abroad required real fortitude.",syn:["courage","strength","resilience","bravery"]},
+  {word:"frank",pos:"adjective",pron:"/fræŋk/",def:"Open honest and direct in speech.",ex:"She gave a frank assessment of the situation that everyone appreciated.",syn:["honest","direct","candid","open"]},
+  {word:"fulfill",pos:"verb",pron:"/fʊlˈfɪl/",def:"To achieve something desired or promised.",ex:"She fulfilled her dream of having a conversation entirely in English.",syn:["achieve","complete","accomplish","realize"]},
+  {word:"goad",pos:"verb",pron:"/ɡəʊd/",def:"To provoke or annoy someone into action.",ex:"Her competitive spirit goaded her into practicing twice as hard.",syn:["provoke","urge","push","spur"]},
+  {word:"grandeur",pos:"noun",pron:"/ˈɡræn.djər/",def:"Splendor and impressiveness; high rank.",ex:"There is a certain grandeur in mastering a second language completely.",syn:["magnificence","splendor","greatness","impressiveness"]},
+  {word:"grounded",pos:"adjective",pron:"/ˈɡraʊn.dɪd/",def:"Having a sensible and realistic view of life.",ex:"Staying grounded helped her avoid both overconfidence and despair.",syn:["realistic","stable","sensible","level-headed"]},
+  {word:"hallmark",pos:"noun",pron:"/ˈhɔːl.mɑːk/",def:"A distinctive feature that identifies something.",ex:"Precision and clarity are the hallmarks of excellent academic writing.",syn:["sign","feature","characteristic","mark"]},
+  {word:"harness",pos:"verb",pron:"/ˈhɑː.nɪs/",def:"To control and make use of something.",ex:"She learned to harness her nervousness and turn it into energy.",syn:["use","control","channel","direct"]},
+  {word:"heed",pos:"verb",pron:"/hiːd/",def:"To pay careful attention to.",ex:"She heeded her teacher's advice and started reviewing words in context.",syn:["listen to","follow","pay attention to","observe"]},
+  {word:"heighten",pos:"verb",pron:"/ˈhaɪ.tən/",def:"To make something more intense.",ex:"Using new words in real conversations heightens your ability to retain them.",syn:["increase","intensify","raise","boost"]},
+  {word:"herald",pos:"verb",pron:"/ˈher.əld/",def:"To signal the approach of something; to announce.",ex:"Her first fluent conversation heralded a new phase in her learning.",syn:["announce","signal","indicate","usher in"]},
+  {word:"hone",pos:"verb",pron:"/həʊn/",def:"To sharpen or make more perfect.",ex:"She used conversation practice to hone her speaking skills.",syn:["sharpen","refine","perfect","improve"]},
+  {word:"humility",pos:"noun",pron:"/hjuːˈmɪl.ɪ.ti/",def:"The quality of having a modest view of one's importance.",ex:"Humility is essential when learning a language — no one knows everything.",syn:["modesty","humbleness","openness","unpretentiousness"]},
+  {word:"idealize",pos:"verb",pron:"/aɪˈdɪə.laɪz/",def:"To regard something as perfect.",ex:"It's easy to idealize native speakers but they make mistakes too.",syn:["romanticize","glorify","overestimate","put on a pedestal"]},
+  {word:"illuminate",pos:"verb",pron:"/ɪˈluː.mɪ.neɪt/",def:"To light up; to make something clear.",ex:"A single great example can illuminate the meaning of a difficult word.",syn:["clarify","explain","light up","reveal"]},
+  {word:"impasse",pos:"noun",pron:"/ˈɪm.pɑːs/",def:"A situation in which no progress is possible.",ex:"She reached an impasse in her studies and needed a new strategy.",syn:["deadlock","stalemate","standstill","block"]},
+  {word:"impeccable",pos:"adjective",pron:"/ɪmˈpek.ə.bəl/",def:"Having no flaws; in accordance with the highest standards.",ex:"After years of practice her pronunciation was impeccable.",syn:["flawless","perfect","faultless","excellent"]},
+  {word:"implication",pos:"noun",pron:"/ˌɪm.plɪˈkeɪ.ʃən/",def:"A conclusion that can be drawn from something.",ex:"The implication of her silence was that she disagreed with the plan.",syn:["suggestion","inference","meaning","consequence"]},
+  {word:"inadvertent",pos:"adjective",pron:"/ˌɪn.ədˈvɜː.tənt/",def:"Not resulting from intention; accidental.",ex:"An inadvertent mistake in word choice can completely change your meaning.",syn:["accidental","unintentional","unplanned","careless"]},
+  {word:"incisive",pos:"adjective",pron:"/ɪnˈsaɪ.sɪv/",def:"Intelligently analytical and clear-thinking.",ex:"Her incisive questions during class showed how deeply she had understood the material.",syn:["sharp","perceptive","penetrating","clear"]},
+  {word:"indispensable",pos:"adjective",pron:"/ˌɪn.dɪˈspen.sə.bəl/",def:"Absolutely necessary.",ex:"A dictionary is an indispensable tool for any serious language learner.",syn:["essential","necessary","vital","crucial"]},
+  {word:"induce",pos:"verb",pron:"/ɪnˈdjuːs/",def:"To succeed in persuading someone; to bring about.",ex:"Good storytelling can induce listeners to learn new vocabulary naturally.",syn:["cause","bring about","persuade","encourage"]},
+  {word:"ingrained",pos:"adjective",pron:"/ɪnˈɡreɪnd/",def:"Firmly established; difficult to change.",ex:"Old habits of translation are deeply ingrained but can be overcome.",syn:["deep-rooted","established","entrenched","fixed"]},
+  {word:"inherent",pos:"adjective",pron:"/ɪnˈhɪər.ənt/",def:"Existing as a natural and permanent part of something.",ex:"There is an inherent challenge in learning vocabulary without using it in real conversation.",syn:["natural","built-in","fundamental","intrinsic"]},
+  {word:"inhibit",pos:"verb",pron:"/ɪnˈhɪb.ɪt/",def:"To make it difficult for a process to occur; to restrain.",ex:"Fear of embarrassment can inhibit language learning more than any grammar rule.",syn:["prevent","hinder","restrict","hold back"]},
+  {word:"innovative",pos:"adjective",pron:"/ˈɪn.ə.veɪ.tɪv/",def:"Featuring new methods or ideas.",ex:"She took an innovative approach by using music to memorize vocabulary.",syn:["creative","original","inventive","fresh"]},
+  {word:"insightful",pos:"adjective",pron:"/ˈɪn.saɪt.fəl/",def:"Having a deep understanding of something.",ex:"Her insightful observation changed how the whole group approached the problem.",syn:["perceptive","thoughtful","wise","observant"]},
+  {word:"instill",pos:"verb",pron:"/ɪnˈstɪl/",def:"To gradually establish a quality in someone's mind.",ex:"Her parents had instilled in her a love of learning from an early age.",syn:["implant","inspire","introduce","teach"]},
+  {word:"intrepid",pos:"adjective",pron:"/ɪnˈtrep.ɪd/",def:"Fearless and adventurous.",ex:"She was an intrepid speaker who welcomed any opportunity to practice.",syn:["fearless","bold","brave","adventurous"]},
+  {word:"intrinsic",pos:"adjective",pron:"/ɪnˈtrɪn.zɪk/",def:"Belonging naturally; essential.",ex:"The intrinsic value of communication goes far beyond passing a test.",syn:["inherent","natural","built-in","fundamental"]},
+  {word:"intuitive",pos:"adjective",pron:"/ɪnˈtjuː.ɪ.tɪv/",def:"Based on what one feels to be true; instinctive.",ex:"Over time correct grammar becomes intuitive rather than something you calculate.",syn:["instinctive","natural","spontaneous","automatic"]},
+  {word:"inundate",pos:"verb",pron:"/ˈɪn.ʌn.deɪt/",def:"To overwhelm with a large amount of something.",ex:"She was inundated with new words when she first arrived in the US.",syn:["overwhelm","flood","swamp","overload"]},
+  {word:"judiciousness",pos:"noun",pron:"/dʒuːˈdɪʃ.əs.nəs/",def:"The quality of having sound judgment.",ex:"Her judiciousness in choosing what to study made her progress faster.",syn:["wisdom","prudence","sense","discernment"]},
+  {word:"laborious",pos:"adjective",pron:"/ləˈbɔː.ri.əs/",def:"Requiring considerable time and effort.",ex:"Memorizing 1000 words can feel laborious but breaking it into daily chunks helps.",syn:["tedious","hard","demanding","painstaking"]},
+  {word:"laudatory",pos:"adjective",pron:"/ˈlɔː.də.tər.i/",def:"Expressing praise and commendation.",ex:"Her teacher wrote a laudatory note on her essay that made her smile all day.",syn:["praising","complimentary","approving","admiring"]},
+  {word:"lavish",pos:"adjective",pron:"/ˈlæv.ɪʃ/",def:"Sumptuously rich or elaborate; giving generously.",ex:"She lavished praise on her study partner whenever she made real progress.",syn:["generous","extravagant","abundant","rich"]},
+  {word:"lethargic",pos:"adjective",pron:"/ləˈθɑː.dʒɪk/",def:"Affected by lethargy; sluggish and apathetic.",ex:"On days she felt lethargic she still did at least ten minutes of review.",syn:["sluggish","tired","slow","listless"]},
+  {word:"levity",pos:"noun",pron:"/ˈlev.ɪ.ti/",def:"The treatment of a serious matter with humor.",ex:"A bit of levity can make language practice feel far less intimidating.",syn:["humor","lightness","fun","playfulness"]},
+  {word:"longevity",pos:"noun",pron:"/lɒnˈdʒev.ɪ.ti/",def:"Long life; long duration.",ex:"The longevity of her study habit was what ultimately made her fluent.",syn:["long life","endurance","durability","permanence"]},
+  {word:"magnanimous",pos:"adjective",pron:"/mæɡˈnæn.ɪ.məs/",def:"Generous and forgiving especially toward rivals.",ex:"She was magnanimous in accepting correction rather than feeling defensive.",syn:["generous","forgiving","noble","gracious"]},
+  {word:"manipulate",pos:"verb",pron:"/məˈnɪp.jʊ.leɪt/",def:"To handle or control skillfully.",ex:"She learned to manipulate sentence structure to express more complex ideas.",syn:["control","handle","manage","influence"]},
+  {word:"mediocre",pos:"adjective",pron:"/ˌmiː.diˈəʊ.kər/",def:"Of only average quality; not very good.",ex:"She refused to be satisfied with mediocre results when she knew she could do better.",syn:["average","ordinary","below par","middling"]},
+  {word:"melancholy",pos:"noun",pron:"/ˈmel.ən.kɒl.i/",def:"A deep feeling of sadness or gloom.",ex:"A touch of melancholy came with the realization of how long the journey would be.",syn:["sadness","sorrow","gloom","depression"]},
+  {word:"mentor",pos:"verb",pron:"/ˈmen.tər/",def:"To advise and train someone less experienced.",ex:"She was fortunate to be mentored by a patient and knowledgeable English teacher.",syn:["guide","coach","teach","advise"]},
+  {word:"mindful",pos:"adjective",pron:"/ˈmaɪnd.fəl/",def:"Conscious or aware of something.",ex:"Being mindful of your word choice helps you communicate more clearly.",syn:["aware","conscious","attentive","thoughtful"]},
+  {word:"moderate",pos:"verb",pron:"/ˈmɒd.ər.eɪt/",def:"To make less extreme; to oversee a discussion.",ex:"She moderated her pace when speaking to ensure clarity.",syn:["reduce","control","regulate","balance"]},
+  {word:"momentous",pos:"adjective",pron:"/məˈmen.təs/",def:"Of great importance or significance.",ex:"Her first full conversation in English was a momentous milestone.",syn:["significant","important","historic","major"]},
+  {word:"myriad",pos:"adjective",pron:"/ˈmɪr.i.əd/",def:"A countless number of different things.",ex:"There are myriad ways to improve your vocabulary every day.",syn:["countless","many","numerous","endless"]},
+  {word:"nonchalance",pos:"noun",pron:"/ˈnɒn.ʃə.lɑːns/",def:"Calm lack of concern; indifference.",ex:"She projected nonchalance at the interview even though she was nervous.",syn:["calm","indifference","ease","casualness"]},
+  {word:"novelty",pos:"noun",pron:"/ˈnɒv.əl.ti/",def:"The quality of being new and original.",ex:"The novelty of learning a new language fades but the rewards grow.",syn:["newness","originality","freshness","innovation"]},
+  {word:"obligation",pos:"noun",pron:"/ˌɒb.lɪˈɡeɪ.ʃən/",def:"An act or course of action that one is morally required to do.",ex:"She felt a personal obligation to practice every single day.",syn:["duty","responsibility","commitment","requirement"]},
+  {word:"obstruct",pos:"verb",pron:"/əbˈstrʌkt/",def:"To block or get in the way of something.",ex:"Negative self-talk obstructs progress more than any language barrier.",syn:["block","hinder","impede","prevent"]},
+  {word:"ongoing",pos:"adjective",pron:"/ˈɒn.ɡəʊ.ɪŋ/",def:"Continuing to exist or develop.",ex:"Vocabulary building is an ongoing process that never truly ends.",syn:["continuing","current","unfinished","developing"]},
+  {word:"ordeal",pos:"noun",pron:"/ɔːˈdiːl/",def:"A painful or difficult experience.",ex:"Her first job interview in English was an ordeal but a valuable one.",syn:["trial","hardship","challenge","difficulty"]},
+  {word:"outweigh",pos:"verb",pron:"/ˌaʊtˈweɪ/",def:"To be more significant than something else.",ex:"The benefits of speaking imperfectly outweigh the embarrassment of making mistakes.",syn:["exceed","surpass","overcome","overshadow"]},
+  {word:"overcome",pos:"verb",pron:"/ˌəʊ.vəˈkʌm/",def:"To succeed in dealing with a problem.",ex:"She overcame her fear of speaking by starting with very small steps.",syn:["conquer","defeat","beat","surmount"]},
+  {word:"painstaking",pos:"adjective",pron:"/ˈpeɪnzˌteɪ.kɪŋ/",def:"Done with or employing great care and thoroughness.",ex:"Painstaking review of mistakes is one of the fastest ways to improve.",syn:["thorough","careful","meticulous","diligent"]},
+  {word:"paradox",pos:"noun",pron:"/ˈpær.ə.dɒks/",def:"A seemingly contradictory statement that is actually true.",ex:"It's a paradox — the more you embrace making mistakes the faster you improve.",syn:["contradiction","irony","inconsistency","puzzle"]},
+  {word:"perceptive",pos:"adjective",pron:"/pəˈsep.tɪv/",def:"Having a ready insight; sensitive to small changes.",ex:"A perceptive listener can often understand more than what is literally said.",syn:["insightful","observant","sharp","aware"]},
+  {word:"pervasive",pos:"adjective",pron:"/pəˈveɪ.sɪv/",def:"Spreading widely throughout something.",ex:"English is pervasive in global media which gives learners endless practice opportunities.",syn:["widespread","omnipresent","prevalent","common"]},
+  {word:"pivotal",pos:"adjective",pron:"/ˈpɪv.ə.təl/",def:"Of crucial importance in relation to the development of something.",ex:"That first successful interview was a pivotal moment in her career.",syn:["crucial","central","key","decisive"]},
+  {word:"placid",pos:"adjective",pron:"/ˈplæs.ɪd/",def:"Calm and peaceful; not easily upset.",ex:"Her placid personality helped her stay focused even in stressful situations.",syn:["calm","tranquil","peaceful","untroubled"]},
+  {word:"pledge",pos:"verb",pron:"/pledʒ/",def:"To commit by a solemn promise.",ex:"She pledged to learn at least three new words every single day.",syn:["promise","commit","vow","swear"]},
+  {word:"potent",pos:"adjective",pron:"/ˈpəʊ.tənt/",def:"Having great power influence or effect.",ex:"Context is the most potent tool for remembering new words.",syn:["powerful","strong","effective","influential"]},
+  {word:"precipitate",pos:"verb",pron:"/prɪˈsɪp.ɪ.teɪt/",def:"To cause something to happen suddenly.",ex:"A single meaningful conversation precipitated a huge jump in her fluency.",syn:["trigger","cause","spark","bring about"]},
+  {word:"prevail",pos:"verb",pron:"/prɪˈveɪl/",def:"To prove more powerful; to win.",ex:"With patience and effort good habits will always prevail.",syn:["succeed","win","overcome","triumph"]},
+  {word:"proactive",pos:"adjective",pron:"/ˌprəʊˈæk.tɪv/",def:"Creating or controlling a situation rather than just responding.",ex:"A proactive learner seeks opportunities to speak rather than waiting for them.",syn:["active","forward-thinking","initiative-taking","prepared"]},
+  {word:"proliferate",pos:"verb",pron:"/prəˈlɪf.ər.eɪt/",def:"To increase rapidly in number.",ex:"Online language tools have proliferated in recent years making learning more accessible.",syn:["multiply","spread","grow","increase"]},
+  {word:"propel",pos:"verb",pron:"/prəˈpel/",def:"To drive or push forward.",ex:"Her curiosity about culture propelled her to learn the language faster.",syn:["drive","push","move","motivate"]},
+  {word:"prudent",pos:"adjective",pron:"/ˈpruː.dənt/",def:"Acting with or showing care and thought for the future.",ex:"It was prudent to review yesterday's words before adding new ones.",syn:["wise","careful","sensible","cautious"]},
+  {word:"pursue",pos:"verb",pron:"/pəˈsjuː/",def:"To follow or chase; to continue with.",ex:"She pursued fluency with the same dedication she applied to her career.",syn:["follow","seek","chase","continue"]},
+  {word:"radical",pos:"adjective",pron:"/ˈræd.ɪ.kəl/",def:"Relating to fundamental change; thorough.",ex:"Her radical improvement in six months was a result of total immersion.",syn:["fundamental","extreme","thorough","sweeping"]},
+  {word:"ratify",pos:"verb",pron:"/ˈræt.ɪ.faɪ/",def:"To give formal consent to; to make officially valid.",ex:"Success in her first presentation ratified months of hard preparation.",syn:["confirm","approve","validate","endorse"]},
+  {word:"reaffirm",pos:"verb",pron:"/ˌriː.əˈfɜːm/",def:"To state something again with confidence.",ex:"Every successful conversation reaffirmed her belief that she could become fluent.",syn:["confirm","reassert","repeat","reinforce"]},
+  {word:"receptive",pos:"adjective",pron:"/rɪˈsep.tɪv/",def:"Willing to consider new ideas.",ex:"Being receptive to feedback is one of the most powerful traits a learner can have.",syn:["open","willing","responsive","welcoming"]},
+  {word:"rectify",pos:"verb",pron:"/ˈrek.tɪ.faɪ/",def:"To put something right; to correct.",ex:"She immediately worked to rectify any grammar error she repeated too often.",syn:["fix","correct","address","resolve"]},
+  {word:"redeem",pos:"verb",pron:"/rɪˈdiːm/",def:"To compensate for faults; to save from failure.",ex:"A strong ending can redeem a presentation that started nervously.",syn:["make up for","save","compensate","recover"]},
+  {word:"redundant",pos:"adjective",pron:"/rɪˈdʌn.dənt/",def:"Not needed; saying the same thing twice.",ex:"Avoid redundant phrases in writing — they weaken the impact of your message.",syn:["unnecessary","repetitive","extra","superfluous"]},
+  {word:"relentless",pos:"adjective",pron:"/rɪˈlent.ləs/",def:"Unceasingly intense; not giving up.",ex:"Her relentless practice schedule made her one of the fastest improvers.",syn:["persistent","unstoppable","unceasing","determined"]},
+  {word:"replenish",pos:"verb",pron:"/rɪˈplen.ɪʃ/",def:"To fill something up again.",ex:"A good night's sleep helps replenish the mental energy needed for learning.",syn:["refill","restore","restock","renew"]},
+  {word:"repudiate",pos:"verb",pron:"/rɪˈpjuː.di.eɪt/",def:"To refuse to accept or be associated with.",ex:"She repudiated the idea that an accent makes a person less intelligent.",syn:["reject","deny","refuse","disown"]},
+  {word:"resonate",pos:"verb",pron:"/ˈrez.ə.neɪt/",def:"To have a strong effect on someone; to evoke a response.",ex:"Stories that resonate with personal experience are the easiest to remember.",syn:["connect","strike a chord","impact","affect"]},
+  {word:"restrain",pos:"verb",pron:"/rɪˈstreɪn/",def:"To hold back from action; to keep under control.",ex:"She restrained herself from over-explaining and let the simple sentence do the work.",syn:["hold back","control","limit","contain"]},
+  {word:"revere",pos:"verb",pron:"/rɪˈvɪər/",def:"To feel deep respect and admiration for.",ex:"She revered any person who had successfully learned a second language.",syn:["respect","admire","honor","esteem"]},
+  {word:"rhetoric",pos:"noun",pron:"/ˈret.ər.ɪk/",def:"The art of effective and persuasive speaking or writing.",ex:"Strong rhetoric can turn a simple argument into a compelling one.",syn:["language","persuasion","speaking","expression"]},
+  {word:"rigor",pos:"noun",pron:"/ˈrɪɡ.ər/",def:"The quality of being extremely thorough and careful.",ex:"The rigor of her daily study routine set her apart from casual learners.",syn:["thoroughness","precision","strictness","discipline"]},
+  {word:"robust",pos:"adjective",pron:"/rəʊˈbʌst/",def:"Strong and healthy; sturdy.",ex:"A robust vocabulary gives you more tools to express exactly what you mean.",syn:["strong","solid","healthy","vigorous"]},
+  {word:"rudimentary",pos:"adjective",pron:"/ˌruː.dɪˈmen.tər.i/",def:"Involving the most basic facts; not fully developed.",ex:"She moved past rudimentary English and into nuanced expression within two years.",syn:["basic","elementary","simple","undeveloped"]},
+  {word:"saturate",pos:"verb",pron:"/ˈsætʃ.ər.eɪt/",def:"To fill completely so no more can be absorbed.",ex:"She saturated herself in English by changing all her devices to the language.",syn:["fill","immerse","flood","soak"]},
+  {word:"savvy",pos:"adjective",pron:"/ˈsæv.i/",def:"Having practical knowledge and good judgment.",ex:"She became savvy about which resources were worth her time and which were not.",syn:["clever","street-smart","knowledgeable","practical"]},
+  {word:"sedulous",pos:"adjective",pron:"/ˈsed.jʊ.ləs/",def:"Showing dedication and care; hardworking.",ex:"Her sedulous approach to reviewing notes made her retention excellent.",syn:["diligent","hardworking","careful","assiduous"]},
+  {word:"serene",pos:"adjective",pron:"/səˈriːn/",def:"Calm and peaceful.",ex:"She felt serene after a long session of reading in English — proud and at peace.",syn:["calm","peaceful","tranquil","composed"]},
+  {word:"singular",pos:"adjective",pron:"/ˈsɪŋ.ɡjʊ.lər/",def:"Remarkable; unique; exceptionally good.",ex:"Her ability to make everyone feel heard was a singular quality.",syn:["unique","remarkable","exceptional","extraordinary"]},
+  {word:"skepticism",pos:"noun",pron:"/ˈskep.tɪ.sɪ.zəm/",def:"Doubt as to the truth of something.",ex:"Healthy skepticism about quick-fix language methods is always warranted.",syn:["doubt","disbelief","questioning","suspicion"]},
+  {word:"sobering",pos:"adjective",pron:"/ˈsəʊ.bər.ɪŋ/",def:"Making someone feel serious or thoughtful.",ex:"Realizing how much she still had to learn was sobering but motivating.",syn:["thought-provoking","serious","chastening","humbling"]},
+  {word:"solemn",pos:"adjective",pron:"/ˈsɒl.əm/",def:"Formal and dignified; deeply sincere.",ex:"She made a solemn commitment to herself: one hour of English every morning.",syn:["serious","formal","earnest","grave"]},
+  {word:"sophisticated",pos:"adjective",pron:"/səˈfɪs.tɪ.keɪ.tɪd/",def:"Having a refined knowledge of culture and ideas.",ex:"Her writing became more sophisticated as her vocabulary expanded.",syn:["refined","complex","advanced","nuanced"]},
+  {word:"sporadic",pos:"adjective",pron:"/spəˈræd.ɪk/",def:"Occurring at irregular intervals.",ex:"Sporadic study produces sporadic results — consistency is the key.",syn:["irregular","occasional","random","infrequent"]},
+  {word:"spur",pos:"noun",pron:"/spɜːr/",def:"A thing that prompts or encourages action.",ex:"Her first compliment on her English was a spur that kept her going for months.",syn:["motivation","push","incentive","trigger"]},
+  {word:"squander",pos:"verb",pron:"/ˈskwɒn.dər/",def:"To waste in a reckless way.",ex:"Do not squander the time you have by studying passively.",syn:["waste","misuse","throw away","blow"]},
+  {word:"steadiness",pos:"noun",pron:"/ˈsted.i.nəs/",def:"The state of being even and regular.",ex:"The steadiness of her daily practice was more important than occasional marathon sessions.",syn:["consistency","stability","regularity","evenness"]},
+  {word:"stoic",pos:"adjective",pron:"/ˈstəʊ.ɪk/",def:"Enduring pain without complaint.",ex:"She took a stoic approach to slow periods — trusting the process.",syn:["enduring","calm","patient","resilient"]},
+  {word:"strive",pos:"verb",pron:"/straɪv/",def:"To make great efforts to achieve something.",ex:"She strived every day to speak more naturally and fluently.",syn:["try hard","work toward","aim","endeavor"]},
+  {word:"substantive",pos:"adjective",pron:"/ˈsʌb.stən.tɪv/",def:"Having a firm basis; meaningful and important.",ex:"She aimed for substantive conversations not just small talk.",syn:["meaningful","real","significant","important"]},
+  {word:"subtlety",pos:"noun",pron:"/ˈsʌt.əl.ti/",def:"The quality of being subtle; fineness of distinction.",ex:"She began to appreciate the subtlety of English humor after two years of immersion.",syn:["nuance","delicacy","refinement","fineness"]},
+  {word:"succumb",pos:"verb",pron:"/səˈkʌm/",def:"To yield to something overwhelming.",ex:"Do not succumb to the temptation of switching to your native language when it gets hard.",syn:["yield","give in","surrender","submit"]},
+  {word:"surmount",pos:"verb",pron:"/sɜːˈmaʊnt/",def:"To overcome a difficulty or obstacle.",ex:"She surmounted every setback with patience and a better plan.",syn:["overcome","conquer","get over","beat"]},
+  {word:"sustain",pos:"verb",pron:"/səˈsteɪn/",def:"To maintain over time; to support.",ex:"The key to language learning is finding a way to sustain daily effort.",syn:["maintain","continue","keep up","support"]},
+  {word:"symbolic",pos:"adjective",pron:"/sɪmˈbɒl.ɪk/",def:"Serving as a symbol; significant.",ex:"Her first conversation entirely in English was symbolic of everything she had worked for.",syn:["meaningful","representative","significant","emblematic"]},
+  {word:"synthesize",pos:"verb",pron:"/ˈsɪn.θə.saɪz/",def:"To combine elements to form a coherent whole.",ex:"Good writers synthesize information from many sources into a clear argument.",syn:["combine","merge","blend","integrate"]},
+  {word:"tarnish",pos:"verb",pron:"/ˈtɑː.nɪʃ/",def:"To make less bright or pure; to damage a reputation.",ex:"One bad presentation did not tarnish the reputation she had built over years.",syn:["damage","stain","spoil","mar"]},
+  {word:"tenuous",pos:"adjective",pron:"/ˈten.ju.əs/",def:"Very weak or uncertain; thin.",ex:"At first her grasp of conversational English was tenuous at best.",syn:["weak","thin","uncertain","fragile"]},
+  {word:"testament",pos:"noun",pron:"/ˈtes.tə.mənt/",def:"Evidence or proof of something.",ex:"Her fluency was a testament to years of disciplined daily practice.",syn:["proof","evidence","tribute","sign"]},
+  {word:"timid",pos:"adjective",pron:"/ˈtɪm.ɪd/",def:"Showing a lack of courage or confidence.",ex:"She had been timid about speaking but practice helped her overcome that.",syn:["shy","hesitant","fearful","meek"]},
+  {word:"toil",pos:"verb",pron:"/tɔɪl/",def:"To work extremely hard.",ex:"She toiled for months to get her English to a professional level.",syn:["work hard","labor","strive","struggle"]},
+  {word:"torment",pos:"noun",pron:"/ˈtɔː.ment/",def:"Severe physical or mental suffering.",ex:"The torment of not being able to express herself clearly drove her to study harder.",syn:["suffering","agony","anguish","pain"]},
+  {word:"transcend",pos:"verb",pron:"/trænˈsend/",def:"To be beyond the range of something; to excel.",ex:"Her mastery of English eventually transcended mere vocabulary and became true fluency.",syn:["surpass","go beyond","exceed","rise above"]},
+  {word:"trite",pos:"adjective",pron:"/traɪt/",def:"Overused and lacking originality.",ex:"She avoided trite phrases and searched for more vivid ways to express herself.",syn:["clichéd","overused","stale","hackneyed"]},
+  {word:"trivialize",pos:"verb",pron:"/ˈtrɪv.i.ə.laɪz/",def:"To make something seem less important than it is.",ex:"Do not trivialize the challenge of learning a new language — it is genuinely hard.",syn:["downplay","minimize","dismiss","undervalue"]},
+  {word:"tumult",pos:"noun",pron:"/ˈtjuː.mʌlt/",def:"A loud confused noise; an uproar.",ex:"The tumult of adjusting to a new country made consistent study even harder.",syn:["uproar","chaos","disorder","commotion"]},
+  {word:"uncanny",pos:"adjective",pron:"/ʌnˈkæn.i/",def:"Strange in a way that seems supernatural.",ex:"She had an uncanny ability to pick up the rhythm of English conversations.",syn:["strange","mysterious","eerie","remarkable"]},
+  {word:"underpin",pos:"verb",pron:"/ˌʌn.dəˈpɪn/",def:"To support or form the basis of something.",ex:"A strong vocabulary underpins every aspect of language proficiency.",syn:["support","form the basis of","underlie","sustain"]},
+  {word:"unfettered",pos:"adjective",pron:"/ʌnˈfet.əd/",def:"Not confined or restricted.",ex:"Once she stopped worrying about perfection her conversation became unfettered and natural.",syn:["free","unrestricted","unrestrained","unhindered"]},
+  {word:"unrelenting",pos:"adjective",pron:"/ˌʌn.rɪˈlen.tɪŋ/",def:"Not yielding in strength or pace.",ex:"Her unrelenting commitment to improvement was what truly set her apart.",syn:["persistent","relentless","steady","constant"]},
+  {word:"upheaval",pos:"noun",pron:"/ʌpˈhiː.vəl/",def:"A sudden violent change or disruption.",ex:"Moving to a new country is a major upheaval that affects every part of life.",syn:["disruption","turmoil","change","disorder"]},
+  {word:"utilize",pos:"verb",pron:"/ˈjuː.tɪ.laɪz/",def:"To make practical use of something.",ex:"She learned to utilize every spare moment for vocabulary review.",syn:["use","employ","apply","make use of"]},
+  {word:"utterance",pos:"noun",pron:"/ˈʌt.ər.əns/",def:"A spoken word statement or vocal sound.",ex:"Every utterance she made in English built her confidence a little more.",syn:["statement","remark","expression","comment"]},
+  {word:"valor",pos:"noun",pron:"/ˈvæl.ər/",def:"Great courage in the face of danger.",ex:"It takes real valor to speak a foreign language in a room full of native speakers.",syn:["courage","bravery","heroism","boldness"]},
+  {word:"vanquish",pos:"verb",pron:"/ˈvæŋ.kwɪʃ/",def:"To defeat thoroughly.",ex:"She vanquished her fear of public speaking through repeated practice.",syn:["defeat","conquer","overcome","beat"]},
+  {word:"vehemence",pos:"noun",pron:"/ˈviː.ɪ.məns/",def:"The display of strong feeling; forcefulness.",ex:"She expressed her opinion with a vehemence that surprised everyone in the room.",syn:["intensity","force","passion","strength"]},
+  {word:"vigilance",pos:"noun",pron:"/ˈvɪdʒ.ɪ.ləns/",def:"The action of keeping careful watch.",ex:"Vigilance in noticing new vocabulary in everyday life accelerates learning.",syn:["alertness","attention","watchfulness","awareness"]},
+  {word:"volatile",pos:"adjective",pron:"/ˈvɒl.ə.taɪl/",def:"Liable to change rapidly and unpredictably.",ex:"Motivation can be volatile — habits are more reliable than feelings.",syn:["unstable","unpredictable","changeable","erratic"]},
+  {word:"voracious",pos:"adjective",pron:"/vəˈreɪ.ʃəs/",def:"Wanting or consuming large amounts eagerly.",ex:"She was a voracious reader who consumed English books at an impressive pace.",syn:["eager","hungry","enthusiastic","greedy"]},
+  {word:"warrant",pos:"verb",pron:"/ˈwɒr.ənt/",def:"To justify or make necessary.",ex:"Her steady progress warranted a more challenging study goal.",syn:["justify","deserve","merit","call for"]},
+  {word:"waver",pos:"verb",pron:"/ˈweɪ.vər/",def:"To become unsteady; to be undecided.",ex:"She wavered briefly between two study methods before committing to one.",syn:["hesitate","falter","fluctuate","be indecisive"]},
+  {word:"willpower",pos:"noun",pron:"/ˈwɪl.paʊər/",def:"Control exerted to do something.",ex:"Willpower gets you started; habit keeps you going.",syn:["self-control","discipline","determination","resolve"]},
+  {word:"withhold",pos:"verb",pron:"/wɪðˈhəʊld/",def:"To refuse to give something.",ex:"Do not withhold praise when a learner makes genuine progress.",syn:["keep back","retain","deny","hold on to"]},
+  {word:"wonder",pos:"noun",pron:"/ˈwʌn.dər/",def:"A feeling of amazement and admiration.",ex:"She never lost her sense of wonder at how much the English language could express.",syn:["awe","amazement","admiration","curiosity"]},
+  {word:"worldly",pos:"adjective",pron:"/ˈwɜːld.li/",def:"Experienced in life; sophisticated.",ex:"Her worldly perspective made her a fascinating conversationalist.",syn:["experienced","sophisticated","cosmopolitan","knowledgeable"]},
+  {word:"worthwhile",pos:"adjective",pron:"/ˌwɜːθˈwaɪl/",def:"Worth the time money or effort spent.",ex:"Every hour invested in language learning turns out to be worthwhile.",syn:["valuable","rewarding","beneficial","meaningful"]},
+  {word:"zest",pos:"noun",pron:"/zest/",def:"Great enthusiasm and energy; enjoyment.",ex:"She approached every new lesson with genuine zest and curiosity.",syn:["enthusiasm","energy","eagerness","relish"]},
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let ST = JSON.parse(localStorage.getItem('ww_state') || 'null') || {
+  mastery: {}, xp: 0, streak: 0, lastDate: '', quizC: 0, quizT: 0,
+  learnedDates: {}, calDone: [], apiKey: ''
+};
+
+function save() { localStorage.setItem('ww_state', JSON.stringify(ST)); }
+
+// Streak logic
+(function(){
+  const today = new Date().toDateString();
+  if(ST.lastDate !== today){
+    const yesterday = new Date(Date.now()-86400000).toDateString();
+    if(ST.lastDate === yesterday) ST.streak = (ST.streak||0)+1;
+    else if(!ST.lastDate) ST.streak = 1;
+    else ST.streak = 1;
+    ST.lastDate = today;
+    if(!ST.calDone) ST.calDone=[];
+    const todayNum = new Date().getDate();
+    if(!ST.calDone.includes(todayNum)) ST.calDone.push(todayNum);
+    save();
+  }
+})();
+
+function getTodayWords(){
+  const d = new Date();
+  const start = new Date(d.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((d - start) / 86400000);
+  const yearSeed = d.getFullYear() * 1000 + dayOfYear;
+  const shuffled = [...WORDS];
+  let s = yearSeed;
+  for(let i = shuffled.length - 1; i > 0; i--){
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return [shuffled[0], shuffled[1], shuffled[2]];
+}
+
+function updateUI(){
+  document.getElementById('streak-count').textContent = ST.streak||1;
+  document.getElementById('xp-disp').textContent = (ST.xp||0)+' XP';
+}
+
+// ─── TODAY ──────────────────────────────────────────────────────────────────
+function initToday(){
+  const d = new Date();
+  document.getElementById('today-date').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const words = getTodayWords();
+  const container = document.getElementById('word-cards');
+  container.innerHTML = words.map((w)=>{
+    const learned = !!ST.mastery[w.word];
+    return `<div class="word-card">
+      <div class="word-header">
+        <div>
+          <div class="word-title">${w.word}</div>
+          <div class="word-pron">${w.pron}</div>
+        </div>
+        <span class="word-pos">${w.pos}</span>
+      </div>
+      <div class="word-def">${w.def}</div>
+      <div class="word-example">"${w.ex}"</div>
+      <div class="syn-row"><strong style="color:var(--text)">Synonyms: </strong>${w.syn.map(s=>`<span class="syn-tag">${s}</span>`).join('')}</div>
+      <div class="word-actions">
+        <button class="speak-btn" id="spk-${w.word}" onclick="speakWord('${w.word}',this)">🔊 Hear it</button>
+        <button class="learned-btn ${learned?'done':''}" id="lb-${w.word}" onclick="markLearned('${w.word}',this)">${learned?'✓ Learned':'+ Mark learned'}</button>
+        <button class="practice-btn" onclick="openPrac('${w.word}')">✏ Practice</button>
+      </div>
+    </div>`;
+  }).join('');
+  words.forEach(w=>{ if(!ST.mastery[w.word]) ST.mastery[w.word]=0; });
+  save();
+}
+
+function speakWord(word, btn){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.lang = 'en-US';
+  utt.rate = 0.85;
+  utt.pitch = 1;
+  // Pick a natural English voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const engVoice = voices.find(v => v.lang.startsWith('en') && v.localService) || voices.find(v => v.lang.startsWith('en'));
+  if(engVoice) utt.voice = engVoice;
+  btn.classList.add('speaking');
+  btn.textContent = '🔊 Playing...';
+  utt.onend = () => { btn.classList.remove('speaking'); btn.textContent = '🔊 Hear it'; };
+  utt.onerror = () => { btn.classList.remove('speaking'); btn.textContent = '🔊 Hear it'; };
+  window.speechSynthesis.speak(utt);
+}
+
+function markLearned(word, btn){
+  if(!ST.mastery[word]){
+    ST.mastery[word]=1; ST.xp=(ST.xp||0)+10;
+    btn.textContent='✓ Learned'; btn.classList.add('done');
+    updateUI(); save();
+  }
+}
+
+// ─── QUIZ ───────────────────────────────────────────────────────────────────
+let QS = null, qType = 'mc';
+function setQType(t, btn){
+  qType=t;
+  document.querySelectorAll('.q-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  initQuiz();
+}
+
+function initQuiz(){
+  const pool = [...WORDS].sort(()=>Math.random()-0.5).slice(0,8);
+  const questions = pool.map(w=>{
+    const distractors = WORDS.filter(x=>x.word!==w.word).sort(()=>Math.random()-0.5).slice(0,3);
+    return {w, options:[...distractors.map(d=>d.def),w.def].sort(()=>Math.random()-0.5)};
+  });
+  QS={questions, current:0, score:0, answered:false};
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const wrap = document.getElementById('quiz-wrap');
+  if(!QS||QS.current>=QS.questions.length){
+    const s=QS?QS.score:0, t=QS?QS.questions.length:8;
+    const pct=Math.round(s/t*100), xpE=s*15;
+    ST.xp=(ST.xp||0)+xpE; ST.quizC=(ST.quizC||0)+s; ST.quizT=(ST.quizT||0)+t;
+    updateUI(); save();
+    wrap.innerHTML=`<div class="quiz-complete">
+      <div class="score-ring"><div class="score-n">${s}</div><div class="score-d">/ ${t}</div></div>
+      <h2>${pct>=80?'Excellent!':pct>=50?'Good effort!':'Keep going!'}</h2>
+      <p>${pct>=80?'Your active vocabulary is growing.':'Review today\'s words and try again.'}</p>
+      <div class="xp-pill">+${xpE} XP earned</div><br><br>
+      <button class="next-btn" style="max-width:220px" onclick="initQuiz()">Try again</button>
+    </div>`;
+    return;
+  }
+  const q=QS.questions[QS.current];
+  const prog=Math.round(QS.current/QS.questions.length*100);
+  let inputHTML='';
+  if(qType==='mc'){
+    inputHTML=`<div class="quiz-options">${q.options.map(o=>`<button class="opt-btn" onclick="answerMC('${o.replace(/'/g,"\\'")}',this)">${o}</button>`).join('')}</div>`;
+  } else if(qType==='fill'){
+    inputHTML=`<div style="font-size:14px;color:var(--text2);margin-bottom:0.75rem">Complete: "She gave a(n) ___ speech." — Use the word shown above.</div>
+      <input class="quiz-fill-input" id="fill-ans" type="text" placeholder="Type the word..." onkeydown="if(event.key==='Enter')answerFill()">
+      <button class="next-btn" onclick="answerFill()" style="margin-bottom:10px">Check answer</button>`;
+  } else {
+    inputHTML=`<div class="quiz-options">${[...WORDS].sort(()=>Math.random()-0.5).slice(0,3).map(x=>x.word).filter(w=>w!==q.w.word).slice(0,3).concat(q.w.word).sort(()=>Math.random()-0.5).map(o=>`<button class="opt-btn" onclick="answerMatch('${o}','${q.w.word}',this)">${o}</button>`).join('')}</div>`;
+    // reverse: show definition, pick word
+  }
+  const showTerm = qType==='match' ? q.w.def : q.w.word;
+  const showHint = qType==='match' ? `Which word matches this definition?` : `${q.w.pos} · ${q.w.pron}`;
+  wrap.innerHTML=`
+    <div class="quiz-prog-bar"><div class="quiz-prog-fill" style="width:${prog}%"></div></div>
+    <div class="quiz-meta"><span>${QS.current+1} of ${QS.questions.length}</span><span>Score: ${QS.score}</span></div>
+    <div class="quiz-type-label">${qType==='mc'?'Choose the definition':qType==='fill'?'Type the word':'Which word is this?'}</div>
+    <div class="quiz-word" style="${qType==='match'?'font-size:17px;font-family:DM Sans,sans-serif;font-weight:400;line-height:1.6;margin-bottom:1rem':''}">${showTerm}</div>
+    <div class="quiz-hint">${showHint}</div>
+    ${inputHTML}
+    <div id="qfb" style="display:none" class="quiz-feedback"></div>
+    <button class="next-btn" id="nxt" style="display:none" onclick="nextQ()">Next word →</button>`;
+}
+
+function answerMC(ans, btn){
+  if(QS.answered) return;
+  QS.answered=true;
+  const q=QS.questions[QS.current];
+  document.querySelectorAll('.opt-btn').forEach(b=>{b.disabled=true; if(b.textContent===q.w.def) b.classList.add('correct');});
+  const correct=ans===q.w.def;
+  if(!correct) btn.classList.add('wrong'); else { QS.score++; ST.mastery[q.w.word]=2; }
+  showFeedback(correct, q.w.word, q.w.def);
+}
+function answerFill(){
+  if(QS.answered) return;
+  QS.answered=true;
+  const q=QS.questions[QS.current];
+  const ans=document.getElementById('fill-ans').value.trim().toLowerCase();
+  const correct=ans===q.w.word.toLowerCase();
+  if(correct){QS.score++; ST.mastery[q.w.word]=2;}
+  showFeedback(correct, q.w.word, q.w.def);
+}
+function answerMatch(ans, correct, btn){
+  if(QS.answered) return;
+  QS.answered=true;
+  const q=QS.questions[QS.current];
+  document.querySelectorAll('.opt-btn').forEach(b=>{b.disabled=true; if(b.textContent===correct) b.classList.add('correct');});
+  const isC=ans===correct;
+  if(!isC) btn.classList.add('wrong'); else {QS.score++; ST.mastery[q.w.word]=2;}
+  showFeedback(isC, q.w.word, q.w.def);
+}
+function showFeedback(correct, word, def){
+  const fb=document.getElementById('qfb');
+  fb.style.display='block'; fb.className='quiz-feedback '+(correct?'correct':'wrong');
+  fb.textContent=correct?`Correct! "${word}": ${def}`:`The answer is "${word}": ${def}`;
+  document.getElementById('nxt').style.display='block';
+  save();
+}
+function nextQ(){ QS.current++; QS.answered=false; renderQuiz(); }
+
+// ─── BANK ───────────────────────────────────────────────────────────────────
+let bFilter='all';
+function setF(f,btn){ bFilter=f; document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active')); btn.classList.add('active'); renderBank(); }
+
+function renderBank(){
+  const q=(document.getElementById('b-search').value||'').toLowerCase();
+  let words=WORDS.filter(w=>{
+    if(bFilter==='learned') return (ST.mastery[w.word]||0)>0;
+    if(['noun','verb','adjective','adverb'].includes(bFilter)) return w.pos===bFilter;
+    return true;
+  }).filter(w=>!q||w.word.includes(q)||w.def.toLowerCase().includes(q)||w.syn.some(s=>s.includes(q)));
+  document.getElementById('b-count').textContent=`${words.length} word${words.length!==1?'s':''}`;
+  const shown=words.slice(0,60);
+  document.getElementById('bank-list').innerHTML=shown.map(w=>{
+    const m=ST.mastery[w.word]||0;
+    return `<div class="b-item" title="Click for example sentences" onclick="chatAbout('${w.word}')">
+      <div style="overflow:hidden;min-width:0">
+        <div style="display:flex;align-items:center"><span class="b-word">${w.word}</span><span class="b-pos">${w.pos}</span></div>
+        <div class="b-def">${w.def}</div>
+      </div>
+      <div class="m-dot m${m}" title="${['New','Learning','Mastered'][m]}"></div>
+    </div>`;
+  }).join('')+(words.length>60?`<p style="text-align:center;font-size:12px;color:var(--text3);padding:12px">+${words.length-60} more · refine your search</p>`:'');
+}
+
+function chatAbout(word){
+  showScreen('progress', document.querySelectorAll('.nav-btn')[3]);
+  document.getElementById('chat-inp').value=`Give me 3 example sentences using the word "${word}" in everyday conversation.`;
+  document.getElementById('chat-inp').focus();
+}
+
+// ─── PROGRESS ───────────────────────────────────────────────────────────────
+function renderProgress(){
+  const seen=Object.keys(ST.mastery).length;
+  const mastered=Object.values(ST.mastery).filter(v=>v===2).length;
+  const learning=Object.values(ST.mastery).filter(v=>v===1).length;
+  const newW=seen-mastered-learning;
+  const acc=ST.quizT>0?Math.round(ST.quizC/ST.quizT*100)+'%':'–';
+  document.getElementById('p-seen').textContent=seen||0;
+  document.getElementById('p-mastered').textContent=mastered;
+  document.getElementById('p-acc').textContent=acc;
+  const tot=Math.max(seen,1);
+  document.getElementById('mb-m').style.width=Math.round(mastered/tot*100)+'%';
+  document.getElementById('mb-l').style.width=Math.round(learning/tot*100)+'%';
+  document.getElementById('mb-n').style.width=Math.round(newW/tot*100)+'%';
+  document.getElementById('mc-m').textContent=mastered;
+  document.getElementById('mc-l').textContent=learning;
+  document.getElementById('mc-n').textContent=newW;
+  // Calendar
+  const d=new Date();
+  document.getElementById('cal-month').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const today=d.getDate(), daysInMonth=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  const cal=document.getElementById('cal-grid');
+  cal.innerHTML=Array.from({length:daysInMonth},(_,i)=>{
+    const day=i+1;
+    const isDone=(ST.calDone||[]).includes(day);
+    const cls=day===today?'today-d':isDone?'done':'';
+    return `<div class="cal-d ${cls}">${day}</div>`;
+  }).join('');
+  // API key setup
+  renderApiArea();
+}
+
+function renderApiArea(){
+  const area=document.getElementById('api-area');
+  if(ST.apiKey){
+    area.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:8px">AI Coach ready · <button onclick="ST.apiKey='';save();renderApiArea()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;text-decoration:underline">Remove key</button></div>`;
+  } else {
+    area.innerHTML=`<div class="api-setup">
+      <p>To use the AI Word Coach, add your Anthropic API key. It stays on your device only.</p>
+      <input type="password" id="api-key-inp" placeholder="sk-ant-api03-...">
+      <button onclick="saveKey()">Save key</button>
+    </div>`;
+  }
+}
+function saveKey(){
+  const k=document.getElementById('api-key-inp').value.trim();
+  if(k){ST.apiKey=k;save();renderApiArea();}
+}
+
+// ─── CHAT ────────────────────────────────────────────────────────────────────
+async function doChat(){
+  const inp=document.getElementById('chat-inp');
+  const msg=inp.value.trim(); if(!msg) return;
+  if(!ST.apiKey){ alert('Please add your Anthropic API key in the Progress tab to use the AI Coach.'); return; }
+  inp.value='';
+  const btn=document.getElementById('chat-send'); btn.disabled=true;
+  const msgs=document.getElementById('chat-msgs');
+  msgs.innerHTML+=`<div class="msg-wrap msg-you"><div class="msg-lbl">you</div>${msg}</div>`;
+  msgs.innerHTML+=`<div class="msg-wrap msg-ai msg-typing" id="typing">Thinking...</div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  const todayW=getTodayWords().map(w=>w.word).join(', ');
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ST.apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-opus-4-6',max_tokens:400,
+        system:`You are a friendly vocabulary coach for an English learner (intermediate level, living in the US since 2022). Their goal is to move words from passive to active vocabulary — they understand words but struggle to use them in speaking. Today's focus words are: ${todayW}. Give short, natural, practical responses. Use everyday examples. Be warm and encouraging. Under 150 words.`,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    const data=await res.json();
+    document.getElementById('typing')?.remove();
+    const reply=data.content?.find(c=>c.type==='text')?.text||'Sorry, something went wrong.';
+    msgs.innerHTML+=`<div class="msg-wrap msg-ai"><div class="msg-lbl">wordwise</div>${reply}</div>`;
+  } catch(e){
+    document.getElementById('typing')?.remove();
+    msgs.innerHTML+=`<div class="msg-wrap msg-ai"><div class="msg-lbl">wordwise</div>Something went wrong. Check your API key and try again.</div>`;
+  }
+  btn.disabled=false; msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ─── PRACTICE MODAL ──────────────────────────────────────────────────────────
+let pracWord='';
+function openPrac(word){
+  pracWord=word;
+  const w=WORDS.find(x=>x.word===word);
+  document.getElementById('prac-title').textContent=`Practice: ${word}`;
+  document.getElementById('prac-sub').textContent=`${w.pos} — ${w.def}`;
+  document.getElementById('prac-text').value='';
+  document.getElementById('prac-result').style.display='none';
+  document.getElementById('practice-modal').classList.add('open');
+}
+function closePrac(){ document.getElementById('practice-modal').classList.remove('open'); }
+async function submitPrac(){
+  const sentence=document.getElementById('prac-text').value.trim();
+  if(!sentence) return;
+  if(!ST.apiKey){ document.getElementById('prac-result').style.display='block'; document.getElementById('prac-result').textContent='Add your API key in the Progress tab to get AI feedback.'; return; }
+  const res_el=document.getElementById('prac-result');
+  res_el.style.display='block'; res_el.textContent='Checking your sentence...';
+  try{
+    const w=WORDS.find(x=>x.word===pracWord);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ST.apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-opus-4-6',max_tokens:200,
+        messages:[{role:'user',content:`The learner wrote: "${sentence}"\nThe target word is "${pracWord}" (${w.pos}: ${w.def}).\nGive brief, encouraging feedback: (1) Is the word used correctly? (2) One suggestion to make it sound more natural. Keep it under 80 words.`}]
+      })
+    });
+    const data=await res.json();
+    res_el.textContent=data.content?.find(c=>c.type==='text')?.text||'Could not get feedback.';
+    ST.mastery[pracWord]=Math.max(ST.mastery[pracWord]||0,1); save();
+  } catch(e){ res_el.textContent='Could not connect. Check your API key.'; }
+}
+
+// ─── DARK MODE ───────────────────────────────────────────────────────────────
+function toggleDark(){
+  const isDark=document.body.classList.toggle('dark');
+  document.getElementById('dark-btn').textContent=isDark?'☀️':'🌙';
+  localStorage.setItem('ww_dark',isDark?'1':'0');
+}
+if(localStorage.getItem('ww_dark')==='1'){ document.body.classList.add('dark'); document.getElementById('dark-btn').textContent='☀️'; }
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function showScreen(name, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='quiz') initQuiz();
+  if(name==='bank') renderBank();
+  if(name==='progress') renderProgress();
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+updateUI();
+initToday();
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
